@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { normalizeString } from '@/lib/formatters'
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type SupabaseClient = any
@@ -24,20 +25,26 @@ interface PlayerWithStats extends Player {
 export async function listarJogadores(search?: string) {
   const supabase = await createClient() as SupabaseClient
 
-  let query = supabase
+  const query = supabase
     .from('players')
     .select('id, club_id, nick, name, notes, is_active')
     .order('nick')
-
-  if (search) {
-    query = query.or(`nick.ilike.%${search}%,name.ilike.%${search}%,club_id.ilike.%${search}%`)
-  }
 
   const { data, error } = await query
 
   if (error) {
     console.error('Erro ao listar jogadores:', error)
     return []
+  }
+
+  // Filtrar client-side com normalização (remove acentos e case-insensitive)
+  if (search) {
+    const searchNormalized = normalizeString(search)
+    return (data as Player[]).filter(player =>
+      normalizeString(player.nick).includes(searchNormalized) ||
+      normalizeString(player.name).includes(searchNormalized) ||
+      normalizeString(player.club_id).includes(searchNormalized)
+    )
   }
 
   return data as Player[]

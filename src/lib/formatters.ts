@@ -64,3 +64,22 @@ export function parseCurrency(value: string): number {
       .replace(',', '.')
   )
 }
+
+/**
+ * Normaliza uma string removendo acentos e convertendo para minúsculas
+ * Útil para buscas case-insensitive e accent-insensitive
+ */
+export function normalizeString(str: string): string {
+  return str
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
+/**
+ * Verifica se um texto contém o termo de busca (case-insensitive e accent-insensitive)
+ */
+export function matchesSearch(text: string, searchTerm: string): boolean {
+  if (!searchTerm) return true
+  return normalizeString(text).includes(normalizeString(searchTerm))
+}
