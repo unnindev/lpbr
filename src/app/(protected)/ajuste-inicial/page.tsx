@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { format } from 'date-fns'
 import { createClient } from '@/lib/supabase/client'
 import { salvarAjusteInicial, verificarAjusteInicial } from '@/actions/ajuste-inicial'
 import { Button } from '@/components/ui/button'
@@ -10,7 +11,7 @@ import { Label } from '@/components/ui/label'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
 import { formatCurrency } from '@/lib/formatters'
-import { AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Loader2, Calendar } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Bank {
@@ -24,6 +25,7 @@ export default function AjusteInicialPage() {
   const [valores, setValores] = useState<Record<string, string>>({})
   const [fichasCirculacao, setFichasCirculacao] = useState('')
   const [saldoRanking, setSaldoRanking] = useState('')
+  const [dataAjuste, setDataAjuste] = useState(format(new Date(), 'yyyy-MM-dd'))
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [jaRealizado, setJaRealizado] = useState(false)
@@ -78,6 +80,7 @@ export default function AjusteInicialPage() {
         bancos: bancosData,
         fichasCirculacao: parseFloat(fichasCirculacao) || 0,
         saldoRanking: parseFloat(saldoRanking) || 0,
+        data: dataAjuste,
       })
 
       if (result.success) {
@@ -124,6 +127,28 @@ export default function AjusteInicialPage() {
             : 'Este ajuste deve ser feito apenas uma vez, no início da operação do sistema. Os valores definidos aqui serão a base para todos os cálculos.'}
         </AlertDescription>
       </Alert>
+
+      {/* Data do Ajuste */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Calendar className="h-5 w-5" />
+            Data de Referência
+          </CardTitle>
+          <CardDescription>
+            Data em que os saldos foram apurados (ex: último dia do período anterior)
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Input
+            type="date"
+            value={dataAjuste}
+            onChange={(e) => setDataAjuste(e.target.value)}
+            disabled={jaRealizado}
+            className="max-w-[200px]"
+          />
+        </CardContent>
+      </Card>
 
       {/* Saldos dos Bancos */}
       <Card>

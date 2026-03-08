@@ -13,6 +13,7 @@ interface AjusteInicialData {
   }>
   fichasCirculacao: number
   saldoRanking: number
+  data?: string // formato yyyy-MM-dd
 }
 
 export async function salvarAjusteInicial(data: AjusteInicialData) {
@@ -36,7 +37,7 @@ export async function salvarAjusteInicial(data: AjusteInicialData) {
   }
 
   try {
-    const today = new Date().toISOString().split('T')[0]
+    const dataAjuste = data.data || new Date().toISOString().split('T')[0]
 
     // 1. Atualizar saldo inicial de cada banco
     for (const banco of data.bancos) {
@@ -53,7 +54,7 @@ export async function salvarAjusteInicial(data: AjusteInicialData) {
         const { error: txError } = await supabase
           .from('transactions')
           .insert({
-            date: today,
+            date: dataAjuste,
             operation_type: 'AJUSTE_INICIAL',
             type: 'CONTROL',
             value: banco.valor,
@@ -72,7 +73,7 @@ export async function salvarAjusteInicial(data: AjusteInicialData) {
       const { error: fichasError } = await supabase
         .from('transactions')
         .insert({
-          date: today,
+          date: dataAjuste,
           operation_type: 'AJUSTE_INICIAL',
           type: 'CONTROL',
           chips: data.fichasCirculacao,
@@ -86,13 +87,13 @@ export async function salvarAjusteInicial(data: AjusteInicialData) {
 
     // 3. Criar transação para saldo de ranking inicial (se > 0)
     if (data.saldoRanking > 0) {
-      // Criar como RANKING_COLETA para entrar no pool
+      // Criar como AJUSTE_INICIAL para não afetar fichas em circulação
       const { error: rankingError } = await supabase
         .from('transactions')
         .insert({
-          date: today,
-          operation_type: 'RANKING_COLETA',
-          type: 'LOG',
+          date: dataAjuste,
+          operation_type: 'AJUSTE_INICIAL',
+          type: 'CONTROL',
           chips: data.saldoRanking,
           reconciled: true,
           created_by: user.id,
