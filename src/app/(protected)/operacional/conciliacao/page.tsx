@@ -511,8 +511,6 @@ export default function ConciliacaoPage() {
                         setBankId('')
                         setChips('')
                         setValue('')
-                        setPlayerIdDe('')
-                        setPlayerIdPara('')
                       }}
                     >
                       <SelectTrigger>
