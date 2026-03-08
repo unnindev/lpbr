@@ -136,7 +136,6 @@ export interface FieldsConfig {
   fichas: boolean
   valor: boolean
   comprovante: boolean
-  acordo?: boolean
 }
 
 /**
@@ -151,8 +150,8 @@ export const CAMPOS_POR_TIPO: Record<OperationType, FieldsConfig> = {
   CUSTO_DESPESA: { jogador: false, banco: true, fichas: false, valor: true, comprovante: false },
   DEPOSITO_AVULSO: { jogador: false, banco: true, fichas: false, valor: true, comprovante: false },
   SAQUE_AVULSO: { jogador: false, banco: true, fichas: false, valor: true, comprovante: false },
-  ACORDO_COLETA: { jogador: true, banco: false, fichas: true, valor: false, comprovante: false, acordo: true },
-  ACORDO_PAGAMENTO: { jogador: true, banco: false, fichas: true, valor: false, comprovante: false, acordo: true },
+  ACORDO_COLETA: { jogador: true, banco: false, fichas: true, valor: false, comprovante: false },
+  ACORDO_PAGAMENTO: { jogador: true, banco: false, fichas: true, valor: false, comprovante: false },
   RANKING_COLETA: { jogador: true, banco: false, fichas: true, valor: false, comprovante: false },
   RANKING_PAGAMENTO_FICHAS: { jogador: true, banco: false, fichas: true, valor: false, comprovante: false },
   RANKING_PAGAMENTO_DINHEIRO: { jogador: true, banco: true, fichas: false, valor: true, comprovante: false },

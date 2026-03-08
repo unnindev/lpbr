@@ -153,9 +153,6 @@ interface NovaTransacaoData {
   origem?: Origem
   hasReceipt?: boolean
   notes?: string
-  // Para acordos
-  playerIdDe?: string
-  playerIdPara?: string
 }
 
 function getTransactionType(operationType: OperationType): TransactionType {
@@ -196,53 +193,8 @@ export async function criarTransacao(data: NovaTransacaoData) {
   }
 
   try {
-    // Tratamento especial para acordos
-    if (data.operationType === 'ACORDO_COLETA' || data.operationType === 'ACORDO_PAGAMENTO') {
-      if (!data.playerIdDe || !data.playerIdPara || !data.chips) {
-        return { success: false, error: 'Dados incompletos para acordo' }
-      }
-
-      const acordoId = crypto.randomUUID()
-
-      // Criar ACORDO_COLETA (de quem sai)
-      const { error: coletaError } = await supabase
-        .from('transactions')
-        .insert({
-          date: data.date,
-          operation_type: 'ACORDO_COLETA',
-          type: 'LOG',
-          chips: data.chips,
-          player_id: data.playerIdDe,
-          acordo_id: acordoId,
-          reconciled: true,
-          notes: data.notes || `[ACORDO] ${data.playerIdDe} → ${data.playerIdPara}`,
-          created_by: user.id,
-        })
-
-      if (coletaError) throw coletaError
-
-      // Criar ACORDO_PAGAMENTO (para quem vai)
-      const { error: pagtoError } = await supabase
-        .from('transactions')
-        .insert({
-          date: data.date,
-          operation_type: 'ACORDO_PAGAMENTO',
-          type: 'LOG',
-          chips: data.chips,
-          player_id: data.playerIdPara,
-          acordo_id: acordoId,
-          reconciled: true,
-          notes: data.notes || `[ACORDO] ${data.playerIdDe} → ${data.playerIdPara}`,
-          created_by: user.id,
-        })
-
-      if (pagtoError) throw pagtoError
-
-      revalidatePath('/operacional/conciliacao')
-      return { success: true }
-    }
-
-    // Tratamento normal
+    // Tratamento normal - cada transação é criada individualmente
+    // ACORDO_COLETA e ACORDO_PAGAMENTO são linhas independentes no log
     let finalValue = data.value
 
     // Se for ChipPix, calcular valor automaticamente
@@ -379,21 +331,6 @@ export async function excluirTransacao(id: string) {
   }
 
   try {
-    // Verificar se a transação existe e não está conciliada
-    const { data: transaction } = await supabase
-      .from('transactions')
-      .select('reconciled, operation_type')
-      .eq('id', id)
-      .single()
-
-    if (!transaction) {
-      return { success: false, error: 'Transação não encontrada' }
-    }
-
-    if (transaction.reconciled && transaction.operation_type !== null) {
-      return { success: false, error: 'Transações conciliadas não podem ser excluídas' }
-    }
-
     const { error } = await supabase
       .from('transactions')
       .delete()
@@ -402,6 +339,7 @@ export async function excluirTransacao(id: string) {
     if (error) throw error
 
     revalidatePath('/operacional/conciliacao')
+    revalidatePath('/ranking')
     return { success: true }
   } catch (error) {
     console.error('Erro ao excluir transação:', error)

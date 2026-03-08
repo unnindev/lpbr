@@ -62,6 +62,7 @@ import {
   Coins,
   Wallet,
   FileCheck,
+  Pencil,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -110,6 +111,7 @@ const OPERATION_TYPES: OperationType[] = [
   'DEPOSITO_AVULSO',
   'SAQUE_AVULSO',
   'ACORDO_COLETA',
+  'ACORDO_PAGAMENTO',
   'RANKING_COLETA',
   'RANKING_PAGAMENTO_FICHAS',
   'RANKING_PAGAMENTO_DINHEIRO',
@@ -138,9 +140,6 @@ export default function ConciliacaoPage() {
   const [origem, setOrigem] = useState<Origem>('MANUAL')
   const [hasReceipt, setHasReceipt] = useState(false)
   const [notes, setNotes] = useState('')
-  // Para acordos
-  const [playerIdDe, setPlayerIdDe] = useState('')
-  const [playerIdPara, setPlayerIdPara] = useState('')
 
   // Lista de bancos para encontrar o banco CHIPPIX
   const [banks, setBanks] = useState<Array<{ id: string; name: string }>>([])
@@ -194,8 +193,6 @@ export default function ConciliacaoPage() {
     setOrigem('MANUAL')
     setHasReceipt(false)
     setNotes('')
-    setPlayerIdDe('')
-    setPlayerIdPara('')
   }
 
   const handleSubmit = async () => {
@@ -207,13 +204,8 @@ export default function ConciliacaoPage() {
     const campos = CAMPOS_POR_TIPO[operationType]
 
     // Validações
-    if (campos.jogador && !campos.acordo && !playerId) {
+    if (campos.jogador && !playerId) {
       toast.error('Selecione um jogador')
-      return
-    }
-
-    if (campos.acordo && (!playerIdDe || !playerIdPara)) {
-      toast.error('Selecione os dois jogadores do acordo')
       return
     }
 
@@ -244,8 +236,6 @@ export default function ConciliacaoPage() {
       origem,
       hasReceipt,
       notes: notes || undefined,
-      playerIdDe: playerIdDe || undefined,
-      playerIdPara: playerIdPara || undefined,
     })
 
     if (result.success) {
@@ -327,7 +317,7 @@ export default function ConciliacaoPage() {
     const campos = CAMPOS_POR_TIPO[operationType]
 
     // Validações
-    if (campos.jogador && !campos.acordo && !playerId) {
+    if (campos.jogador && !playerId) {
       toast.error('Selecione um jogador')
       return
     }
@@ -540,24 +530,7 @@ export default function ConciliacaoPage() {
                     </Select>
                   </div>
 
-                  {campos?.acordo ? (
-                    <>
-                      <div className="space-y-2">
-                        <Label>De (quem entrega as fichas)</Label>
-                        <PlayerSelector
-                          value={playerIdDe}
-                          onSelect={(id) => setPlayerIdDe(id)}
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Para (quem recebe as fichas)</Label>
-                        <PlayerSelector
-                          value={playerIdPara}
-                          onSelect={(id) => setPlayerIdPara(id)}
-                        />
-                      </div>
-                    </>
-                  ) : campos?.jogador ? (
+                  {campos?.jogador && (
                     <div className="space-y-2">
                       <Label>Jogador</Label>
                       <PlayerSelector
@@ -565,7 +538,7 @@ export default function ConciliacaoPage() {
                         onSelect={(id) => setPlayerId(id)}
                       />
                     </div>
-                  ) : null}
+                  )}
 
                   {campos?.banco && (
                     <div className="space-y-2">
@@ -674,9 +647,13 @@ export default function ConciliacaoPage() {
             }}>
               <DialogContent className="max-w-lg">
                 <DialogHeader>
-                  <DialogTitle>Conciliar Transação</DialogTitle>
+                  <DialogTitle>
+                    {transacaoEditando?.reconciled ? 'Editar Transação' : 'Conciliar Transação'}
+                  </DialogTitle>
                   <DialogDescription>
-                    Defina o tipo de operação e complete os dados da transação
+                    {transacaoEditando?.reconciled
+                      ? 'Edite os dados da transação'
+                      : 'Defina o tipo de operação e complete os dados da transação'}
                   </DialogDescription>
                 </DialogHeader>
 
@@ -929,7 +906,7 @@ export default function ConciliacaoPage() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-1">
-                          {!tx.reconciled && (
+                          {!tx.reconciled ? (
                             <Button
                               variant="outline"
                               size="sm"
@@ -938,18 +915,26 @@ export default function ConciliacaoPage() {
                             >
                               Conciliar
                             </Button>
-                          )}
-                          {/* Mostrar botão de excluir para pendentes ou transações de ranking */}
-                          {(!tx.reconciled || tx.operation_type?.startsWith('RANKING_')) && (
+                          ) : (
                             <Button
                               variant="ghost"
                               size="icon"
-                              onClick={() => handleDelete(tx.id)}
-                              className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                              onClick={() => abrirConciliacao(tx)}
+                              className="text-gray-500 hover:text-gray-700 hover:bg-gray-50"
+                              title="Editar transação"
                             >
-                              <Trash2 className="h-4 w-4" />
+                              <Pencil className="h-4 w-4" />
                             </Button>
                           )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(tx.id)}
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            title="Excluir transação"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
