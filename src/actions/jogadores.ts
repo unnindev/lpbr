@@ -129,7 +129,6 @@ export async function criarJogador(data: NovoJogadorData) {
         nick: data.nick,
         name: data.name,
         notes: data.notes || null,
-        created_by: user.id,
       })
 
     if (error) {
