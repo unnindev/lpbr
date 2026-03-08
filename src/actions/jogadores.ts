@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient, createServiceClient } from '@/lib/supabase/server'
+import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { normalizeString } from '@/lib/formatters'
 
@@ -114,27 +114,15 @@ interface NovoJogadorData {
 }
 
 export async function criarJogador(data: NovoJogadorData) {
-  console.log('[criarJogador] Iniciando com dados:', JSON.stringify(data))
-
   const supabase = await createClient() as SupabaseClient
-  console.log('[criarJogador] Cliente criado')
 
-  const { data: { user }, error: authError } = await supabase.auth.getUser()
-  console.log('[criarJogador] User:', user?.id, 'AuthError:', authError?.message)
-
+  const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    console.log('[criarJogador] Usuário não autenticado')
     return { success: false, error: 'Usuário não autenticado' }
   }
 
-  // Usar service client para operações de escrita (bypassa RLS)
-  console.log('[criarJogador] Criando service client...')
-  const serviceClient = await createServiceClient() as SupabaseClient
-  console.log('[criarJogador] Service client criado')
-
   try {
-    console.log('[criarJogador] Inserindo jogador...')
-    const { error } = await serviceClient
+    const { error } = await supabase
       .from('players')
       .insert({
         club_id: data.club_id,
@@ -144,23 +132,18 @@ export async function criarJogador(data: NovoJogadorData) {
         created_by: user.id,
       })
 
-    console.log('[criarJogador] Resultado do insert, error:', error?.message, error?.code)
-
     if (error) {
-      console.error('[criarJogador] Erro ao criar jogador:', error)
-      // Tratar erros específicos
+      console.error('Erro ao criar jogador:', error)
       if (error.code === '23505') {
         return { success: false, error: 'Já existe um jogador com este código PPPoker' }
       }
       return { success: false, error: error.message || 'Erro ao criar jogador' }
     }
 
-    console.log('[criarJogador] Revalidando path...')
     revalidatePath('/jogadores')
-    console.log('[criarJogador] Sucesso!')
     return { success: true }
   } catch (error) {
-    console.error('[criarJogador] Exception:', error)
+    console.error('Erro ao criar jogador:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro ao criar jogador',
@@ -176,11 +159,8 @@ export async function editarJogador(id: string, data: { nick: string; name: stri
     return { success: false, error: 'Usuário não autenticado' }
   }
 
-  // Usar service client para operações de escrita (bypassa RLS)
-  const serviceClient = await createServiceClient() as SupabaseClient
-
   try {
-    const { error } = await serviceClient
+    const { error } = await supabase
       .from('players')
       .update({
         nick: data.nick,
@@ -210,9 +190,6 @@ export async function toggleJogadorAtivo(id: string) {
     return { success: false, error: 'Usuário não autenticado' }
   }
 
-  // Usar service client para operações de escrita (bypassa RLS)
-  const serviceClient = await createServiceClient() as SupabaseClient
-
   try {
     const { data: current } = await supabase
       .from('players')
@@ -220,7 +197,7 @@ export async function toggleJogadorAtivo(id: string) {
       .eq('id', id)
       .single()
 
-    const { error } = await serviceClient
+    const { error } = await supabase
       .from('players')
       .update({ is_active: !current?.is_active })
       .eq('id', id)
