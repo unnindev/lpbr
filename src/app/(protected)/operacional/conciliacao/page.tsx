@@ -707,7 +707,7 @@ export default function ConciliacaoPage() {
                     </Select>
                   </div>
 
-                  {campos?.jogador && !campos?.acordo && (
+                  {campos?.jogador && (
                     <div className="space-y-2">
                       <Label>Jogador</Label>
                       <PlayerSelector
