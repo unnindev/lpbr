@@ -101,12 +101,15 @@ export async function criarAgente(data: NovoAgenteData) {
         pct_lpbr: data.pctLpbr,
       })
 
-    if (error) throw error
+    if (error) {
+      console.error('Erro Supabase ao criar agente:', error)
+      return { success: false, error: error.message || 'Erro ao criar agente' }
+    }
 
     revalidatePath('/agentes')
     return { success: true }
   } catch (error) {
-    console.error('Erro ao criar agente:', error)
+    console.error('Exception ao criar agente:', error)
     return {
       success: false,
       error: error instanceof Error ? error.message : 'Erro ao criar agente',
