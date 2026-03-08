@@ -30,10 +30,10 @@ export function BankSelector({
 }: BankSelectorProps) {
   const [banks, setBanks] = useState<Bank[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
     async function loadBanks() {
+      const supabase = createClient()
       const { data } = await supabase
         .from('banks')
         .select('id, name')
@@ -45,7 +45,7 @@ export function BankSelector({
     }
 
     loadBanks()
-  }, [supabase])
+  }, [])
 
   // Encontrar o nome do banco selecionado
   const selectedBank = banks.find(b => b.id === value)

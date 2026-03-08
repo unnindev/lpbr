@@ -42,10 +42,10 @@ export function PlayerSelector({
   const [open, setOpen] = useState(false)
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
-  const supabase = createClient()
 
   useEffect(() => {
     async function loadPlayers() {
+      const supabase = createClient()
       const { data } = await supabase
         .from('players')
         .select('id, nick, name, club_id')
@@ -57,7 +57,7 @@ export function PlayerSelector({
     }
 
     loadPlayers()
-  }, [supabase])
+  }, [])
 
   const selectedPlayer = players.find((p) => p.id === value)
 
