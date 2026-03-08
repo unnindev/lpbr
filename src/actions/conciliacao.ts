@@ -62,7 +62,7 @@ export async function listarTransacoesPorData(dateStr: string) {
       bank:banks(id, name)
     `)
     .eq('date', dateStr)
-    .neq('operation_type', 'AJUSTE_INICIAL')
+    .or('operation_type.is.null,operation_type.neq.AJUSTE_INICIAL')
     .order('created_at', { ascending: false })
 
   if (error) {
