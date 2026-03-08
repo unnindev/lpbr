@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { format } from 'date-fns'
 import { createClient } from '@/lib/supabase/client'
-import { salvarAjusteInicial, verificarAjusteInicial } from '@/actions/ajuste-inicial'
+import { salvarAjusteInicial, verificarAjusteInicial, getAjusteInicialExistente, atualizarAjusteInicial } from '@/actions/ajuste-inicial'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -29,14 +29,15 @@ export default function AjusteInicialPage() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [jaRealizado, setJaRealizado] = useState(false)
+  const [editando, setEditando] = useState(false)
   const router = useRouter()
   const supabase = createClient()
 
   useEffect(() => {
     async function loadData() {
       // Verificar se já foi realizado
-      const { jaRealizado } = await verificarAjusteInicial()
-      setJaRealizado(jaRealizado)
+      const { jaRealizado: realizado } = await verificarAjusteInicial()
+      setJaRealizado(realizado)
 
       // Carregar bancos
       const { data: banksData } = await supabase
@@ -53,6 +54,20 @@ export default function AjusteInicialPage() {
           initialValues[bank.id] = bank.initial_balance.toString()
         })
         setValores(initialValues)
+      }
+
+      // Carregar valores existentes de fichas e ranking
+      if (realizado) {
+        const existentes = await getAjusteInicialExistente()
+        if (existentes.fichasCirculacao > 0) {
+          setFichasCirculacao(existentes.fichasCirculacao.toString())
+        }
+        if (existentes.saldoRanking > 0) {
+          setSaldoRanking(existentes.saldoRanking.toString())
+        }
+        if (existentes.dataAjuste) {
+          setDataAjuste(existentes.dataAjuste)
+        }
       }
 
       setLoading(false)
@@ -76,16 +91,26 @@ export default function AjusteInicialPage() {
         valor: parseFloat(valores[bank.id] || '0') || 0,
       }))
 
-      const result = await salvarAjusteInicial({
+      const dados = {
         bancos: bancosData,
         fichasCirculacao: parseFloat(fichasCirculacao) || 0,
         saldoRanking: parseFloat(saldoRanking) || 0,
         data: dataAjuste,
-      })
+      }
+
+      // Usar função de atualização se estiver editando, senão usar função de criar
+      const result = editando
+        ? await atualizarAjusteInicial(dados)
+        : await salvarAjusteInicial(dados)
 
       if (result.success) {
-        toast.success('Ajuste inicial salvo com sucesso!')
-        router.push('/dashboard')
+        toast.success(editando ? 'Ajuste inicial atualizado!' : 'Ajuste inicial salvo com sucesso!')
+        if (editando) {
+          setEditando(false)
+          setJaRealizado(true)
+        } else {
+          router.push('/dashboard')
+        }
       } else {
         toast.error(result.error || 'Erro ao salvar ajuste inicial')
       }
@@ -94,6 +119,16 @@ export default function AjusteInicialPage() {
     } finally {
       setSaving(false)
     }
+  }
+
+  const handleEditar = () => {
+    setEditando(true)
+  }
+
+  const handleCancelarEdicao = () => {
+    setEditando(false)
+    // Recarregar dados originais
+    window.location.reload()
   }
 
   if (loading) {
@@ -112,19 +147,28 @@ export default function AjusteInicialPage() {
       </div>
 
       {/* Aviso de uso único */}
-      <Alert variant={jaRealizado ? 'default' : 'destructive'} className={jaRealizado ? 'border-green-500 bg-green-50' : ''}>
-        {jaRealizado ? (
+      <Alert variant={jaRealizado && !editando ? 'default' : 'destructive'} className={jaRealizado && !editando ? 'border-green-500 bg-green-50' : ''}>
+        {jaRealizado && !editando ? (
           <CheckCircle2 className="h-4 w-4 text-green-600" />
         ) : (
           <AlertTriangle className="h-4 w-4" />
         )}
         <AlertTitle>
-          {jaRealizado ? 'Ajuste já realizado' : 'Atenção - Uso único'}
+          {editando ? 'Modo de edição' : jaRealizado ? 'Ajuste já realizado' : 'Atenção - Uso único'}
         </AlertTitle>
-        <AlertDescription>
-          {jaRealizado
-            ? 'O ajuste inicial já foi realizado anteriormente. Os valores abaixo são apenas para visualização.'
-            : 'Este ajuste deve ser feito apenas uma vez, no início da operação do sistema. Os valores definidos aqui serão a base para todos os cálculos.'}
+        <AlertDescription className="flex items-center justify-between">
+          <span>
+            {editando
+              ? 'Você está editando o ajuste inicial. As alterações serão aplicadas ao salvar.'
+              : jaRealizado
+              ? 'O ajuste inicial já foi realizado anteriormente.'
+              : 'Este ajuste deve ser feito apenas uma vez, no início da operação do sistema. Os valores definidos aqui serão a base para todos os cálculos.'}
+          </span>
+          {jaRealizado && !editando && (
+            <Button variant="outline" size="sm" onClick={handleEditar} className="ml-4">
+              Editar
+            </Button>
+          )}
         </AlertDescription>
       </Alert>
 
@@ -144,7 +188,7 @@ export default function AjusteInicialPage() {
             type="date"
             value={dataAjuste}
             onChange={(e) => setDataAjuste(e.target.value)}
-            disabled={jaRealizado}
+            disabled={jaRealizado && !editando}
             className="max-w-[200px]"
           />
         </CardContent>
@@ -177,7 +221,7 @@ export default function AjusteInicialPage() {
                       value={valores[bank.id] || ''}
                       onChange={(e) => handleValorChange(bank.id, e.target.value)}
                       placeholder="0,00"
-                      disabled={jaRealizado}
+                      disabled={jaRealizado && !editando}
                       className="max-w-[200px]"
                     />
                   </div>
@@ -211,7 +255,7 @@ export default function AjusteInicialPage() {
               value={fichasCirculacao}
               onChange={(e) => setFichasCirculacao(e.target.value.replace(/[^\d.,]/g, '').replace(',', '.'))}
               placeholder="0,00"
-              disabled={jaRealizado}
+              disabled={jaRealizado && !editando}
               className="max-w-[200px]"
             />
           </div>
@@ -235,7 +279,7 @@ export default function AjusteInicialPage() {
               value={saldoRanking}
               onChange={(e) => setSaldoRanking(e.target.value.replace(/[^\d.,]/g, '').replace(',', '.'))}
               placeholder="0,00"
-              disabled={jaRealizado}
+              disabled={jaRealizado && !editando}
               className="max-w-[200px]"
             />
           </div>
@@ -243,8 +287,18 @@ export default function AjusteInicialPage() {
       </Card>
 
       {/* Botão Salvar */}
-      {!jaRealizado && (
-        <div className="flex justify-end">
+      {(!jaRealizado || editando) && (
+        <div className="flex justify-end gap-3">
+          {editando && (
+            <Button
+              variant="outline"
+              onClick={handleCancelarEdicao}
+              disabled={saving}
+              size="lg"
+            >
+              Cancelar
+            </Button>
+          )}
           <Button
             onClick={handleSubmit}
             disabled={saving}
@@ -255,6 +309,8 @@ export default function AjusteInicialPage() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Salvando...
               </>
+            ) : editando ? (
+              'Salvar Alterações'
             ) : (
               'Salvar Ajuste Inicial'
             )}
