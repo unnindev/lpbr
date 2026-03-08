@@ -66,8 +66,8 @@ export default function CalculadoraPage() {
   }
 
   const updateColeta = (id: string, field: keyof ColetaLine, value: string) => {
-    setColetas(
-      coletas.map((c) => (c.id === id ? { ...c, [field]: value } : c))
+    setColetas((prev) =>
+      prev.map((c) => (c.id === id ? { ...c, [field]: value } : c))
     )
   }
 
@@ -90,8 +90,8 @@ export default function CalculadoraPage() {
   }
 
   const updatePagamento = (id: string, field: keyof PagamentoLine, value: string) => {
-    setPagamentos(
-      pagamentos.map((p) => (p.id === id ? { ...p, [field]: value } : p))
+    setPagamentos((prev) =>
+      prev.map((p) => (p.id === id ? { ...p, [field]: value } : p))
     )
   }
 
