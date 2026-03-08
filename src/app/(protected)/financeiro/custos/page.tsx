@@ -175,7 +175,9 @@ export default function CustosPage() {
               onValueChange={(v) => v && setMes(parseInt(v))}
             >
               <SelectTrigger className="w-36">
-                <SelectValue />
+                <SelectValue>
+                  {MESES.find(m => m.value === mes)?.label}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {MESES.map((m) => (
@@ -191,7 +193,9 @@ export default function CustosPage() {
               onValueChange={(v) => v && setAno(parseInt(v))}
             >
               <SelectTrigger className="w-24">
-                <SelectValue />
+                <SelectValue>
+                  {ano}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {anos.map((a) => (

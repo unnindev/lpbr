@@ -184,7 +184,9 @@ export default function HistoricoPage() {
                 onValueChange={(v) => setTabela(v || '')}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Todas" />
+                  <SelectValue placeholder="Todas">
+                    {tabela ? formatTableName(tabela) : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todas</SelectItem>
@@ -203,7 +205,9 @@ export default function HistoricoPage() {
                 onValueChange={(v) => setUsuario(v || '')}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="Todos" />
+                  <SelectValue placeholder="Todos">
+                    {usuario ? usuarios.find(u => u.id === usuario)?.name : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="">Todos</SelectItem>

@@ -378,7 +378,9 @@ export default function CalculadoraPage() {
                           }}
                         >
                           <SelectTrigger className="w-40">
-                            <SelectValue />
+                            <SelectValue>
+                              {pag.modalidade === 'FICHAS' ? 'Fichas' : pag.modalidade === 'DINHEIRO' ? 'Dinheiro (R$)' : pag.modalidade === 'ABATE_DIVIDA' ? 'Abate Dívida' : undefined}
+                            </SelectValue>
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="FICHAS">Fichas</SelectItem>

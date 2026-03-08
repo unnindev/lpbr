@@ -47,6 +47,9 @@ export function BankSelector({
     loadBanks()
   }, [supabase])
 
+  // Encontrar o nome do banco selecionado
+  const selectedBank = banks.find(b => b.id === value)
+
   return (
     <Select
       value={value}
@@ -56,7 +59,9 @@ export function BankSelector({
       disabled={disabled || loading}
     >
       <SelectTrigger>
-        <SelectValue placeholder={placeholder} />
+        <SelectValue placeholder={placeholder}>
+          {selectedBank?.name}
+        </SelectValue>
       </SelectTrigger>
       <SelectContent>
         {banks.map((bank) => (

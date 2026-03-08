@@ -376,7 +376,9 @@ export default function UsuariosPage() {
                 onValueChange={(v) => v && setCreateRole(v as UserRole)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>
+                    {createRole === 'USER' ? 'Usuário' : createRole === 'ADMIN' ? 'Administrador' : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="USER">Usuário</SelectItem>
@@ -426,7 +428,9 @@ export default function UsuariosPage() {
                 onValueChange={(v) => v && setEditRole(v as UserRole)}
               >
                 <SelectTrigger>
-                  <SelectValue />
+                  <SelectValue>
+                    {editRole === 'USER' ? 'Usuário' : editRole === 'ADMIN' ? 'Administrador' : undefined}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="USER">Usuário</SelectItem>

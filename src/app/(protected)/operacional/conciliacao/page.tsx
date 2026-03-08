@@ -478,9 +478,11 @@ export default function ConciliacaoPage() {
                       }}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione..." />
+                        <SelectValue placeholder="Selecione...">
+                          {operationType ? OPERATION_TYPE_LABELS[operationType] : undefined}
+                        </SelectValue>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="min-w-[320px]">
                         {OPERATION_TYPES.map((type) => (
                           <SelectItem key={type} value={type}>
                             {OPERATION_TYPE_LABELS[type]}
@@ -560,7 +562,9 @@ export default function ConciliacaoPage() {
                       <Label>Origem</Label>
                       <Select value={origem} onValueChange={(v) => setOrigem(v as Origem)}>
                         <SelectTrigger>
-                          <SelectValue />
+                          <SelectValue>
+                            {origem === 'MANUAL' ? 'Manual' : origem === 'CHIPPIX' ? 'ChipPix' : undefined}
+                          </SelectValue>
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="MANUAL">Manual</SelectItem>
@@ -666,9 +670,11 @@ export default function ConciliacaoPage() {
                       onValueChange={(v) => setOperationType(v as OperationType)}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione..." />
+                        <SelectValue placeholder="Selecione...">
+                          {operationType ? OPERATION_TYPE_LABELS[operationType] : undefined}
+                        </SelectValue>
                       </SelectTrigger>
-                      <SelectContent>
+                      <SelectContent className="min-w-[320px]">
                         {OPERATION_TYPES.map((type) => (
                           <SelectItem key={type} value={type}>
                             {OPERATION_TYPE_LABELS[type]}
