@@ -91,6 +91,7 @@ export async function listarLogsPorData(date: string) {
     `)
     .eq('type', 'LOG')
     .eq('date', date)
+    .not('operation_type', 'in', '(RAKE,RAKE_AGENTE)')
     .order('created_at', { ascending: false })
 
   if (error) {
