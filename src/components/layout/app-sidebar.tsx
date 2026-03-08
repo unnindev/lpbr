@@ -115,7 +115,7 @@ export function AppSidebar({ userRole, userName }: AppSidebarProps) {
 
   return (
     <Sidebar>
-      <SidebarHeader className="border-b px-6 py-4">
+      <SidebarHeader className="h-16 border-b px-6 flex-row items-center">
         <Link href="/dashboard" className="flex items-center gap-3">
           <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
             <span className="text-lg font-bold text-white">LP</span>

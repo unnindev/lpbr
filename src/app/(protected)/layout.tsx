@@ -40,8 +40,7 @@ export default async function ProtectedLayout({
       />
       <SidebarInset>
         <header className="flex h-16 shrink-0 items-center gap-3 border-b bg-white/80 backdrop-blur-sm px-6 sticky top-0 z-10">
-          <SidebarTrigger className="-ml-2 h-9 w-9" />
-          <Separator orientation="vertical" className="h-5" />
+          <SidebarTrigger className="-ml-2" />
         </header>
         <main className="flex-1 overflow-auto p-6 lg:p-8 scrollbar-thin">
           <div className="max-w-[1600px] mx-auto">

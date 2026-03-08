@@ -164,18 +164,17 @@ export default function LogPage() {
   return (
     <div className="flex gap-6 h-[calc(100vh-8rem)]">
       {/* Lado esquerdo - Calendário */}
-      <div className="w-80 shrink-0">
-        <Card>
+      <div className="shrink-0">
+        <Card className="w-fit">
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium">Selecionar Data</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-4">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={(date) => date && setSelectedDate(date)}
               locale={ptBR}
-              className="rounded-md border"
             />
           </CardContent>
         </Card>
