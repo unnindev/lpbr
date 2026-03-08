@@ -102,26 +102,26 @@ export default function CreditoPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Crédito Concedido</h1>
-          <p className="text-gray-500">Jogadores com dívidas de crédito pendentes</p>
+          <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">Crédito Concedido</h1>
+          <p className="text-gray-500 mt-1">Jogadores com dívidas de crédito pendentes</p>
         </div>
       </div>
 
       {/* Card Total */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-sm font-medium text-gray-500">
+      <Card className="hover:shadow-md transition-shadow bg-gradient-to-br from-amber-50 to-orange-50 border-amber-100">
+        <CardHeader className="flex flex-row items-center justify-between pb-3">
+          <CardTitle className="text-sm font-medium text-amber-700/70">
             Total em Crédito Pendente
           </CardTitle>
-          <div className="p-2 rounded-lg bg-amber-50">
-            <CreditCard className="h-4 w-4 text-amber-600" />
+          <div className="p-3 rounded-xl bg-amber-100">
+            <CreditCard className="h-5 w-5 text-amber-600" />
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold text-amber-600">
+        <CardContent className="pt-0">
+          <div className="text-3xl lg:text-4xl font-bold text-amber-600 tracking-tight">
             {formatChips(totalCredito)}
           </div>
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-sm text-amber-600/60 mt-2">
             Soma de todas as dívidas de crédito
           </p>
         </CardContent>
@@ -129,92 +129,101 @@ export default function CreditoPage() {
 
       {/* Lista de jogadores */}
       <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-amber-600" />
+        <CardHeader className="pb-4">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <AlertTriangle className="h-5 w-5 text-amber-500" />
             Jogadores com Crédito
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-0">
           {loading ? (
-            <div className="flex items-center justify-center h-32">
-              <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+            <div className="flex items-center justify-center h-48">
+              <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
             </div>
           ) : jogadores.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <CreditCard className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Nenhum jogador com crédito pendente</p>
+            <div className="text-center py-12 text-gray-500">
+              <CreditCard className="h-12 w-12 mx-auto mb-3 opacity-30" />
+              <p className="text-lg font-medium">Nenhum jogador com crédito pendente</p>
+              <p className="text-sm text-gray-400 mt-1">Todos os créditos foram quitados</p>
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Nick</TableHead>
-                  <TableHead>Nome</TableHead>
-                  <TableHead className="text-right">Dívida</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {jogadores.map((item) => (
-                  <TableRow
-                    key={item.player.id}
-                    className="cursor-pointer hover:bg-gray-50"
-                    onClick={() => abrirHistorico(item)}
-                  >
-                    <TableCell className="font-medium">{item.player.nick}</TableCell>
-                    <TableCell className="text-gray-500">{item.player.name}</TableCell>
-                    <TableCell className="text-right">
-                      <span className="font-mono font-bold text-amber-600">
-                        {formatChips(item.divida)}
-                      </span>
-                    </TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow className="bg-gray-50/50">
+                    <TableHead className="font-semibold">Nick</TableHead>
+                    <TableHead className="font-semibold">Nome</TableHead>
+                    <TableHead className="text-right font-semibold">Dívida</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {jogadores.map((item) => (
+                    <TableRow
+                      key={item.player.id}
+                      className="cursor-pointer hover:bg-amber-50/50 transition-colors"
+                      onClick={() => abrirHistorico(item)}
+                    >
+                      <TableCell className="font-semibold">{item.player.nick}</TableCell>
+                      <TableCell className="text-gray-500">{item.player.name}</TableCell>
+                      <TableCell className="text-right">
+                        <span className="font-mono text-lg font-bold text-amber-600">
+                          {formatChips(item.divida)}
+                        </span>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
 
       {/* Dialog de Histórico */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <History className="h-5 w-5" />
+        <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-hidden flex flex-col">
+          <DialogHeader className="pb-4">
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <History className="h-6 w-6 text-primary" />
               Histórico de Crédito
             </DialogTitle>
-            <DialogDescription>
-              {jogadorSelecionado && (
-                <span>
-                  <strong>{jogadorSelecionado.player.nick}</strong> - {jogadorSelecionado.player.name}
-                  <Badge variant="outline" className="ml-2 text-amber-600 border-amber-600">
-                    Dívida atual: {formatChips(jogadorSelecionado.divida)}
-                  </Badge>
-                </span>
-              )}
-            </DialogDescription>
+            {jogadorSelecionado && (
+              <div className="flex items-center gap-3 mt-3 p-3 bg-gray-50 rounded-lg">
+                <div className="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center">
+                  <span className="text-sm font-bold text-amber-600">
+                    {jogadorSelecionado.player.nick.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div className="flex-1">
+                  <p className="font-semibold">{jogadorSelecionado.player.nick}</p>
+                  <p className="text-sm text-gray-500">{jogadorSelecionado.player.name}</p>
+                </div>
+                <Badge className="bg-amber-100 text-amber-700 border-0 text-sm font-semibold">
+                  Dívida: {formatChips(jogadorSelecionado.divida)}
+                </Badge>
+              </div>
+            )}
           </DialogHeader>
 
-          <div className="flex-1 overflow-auto">
+          <div className="flex-1 overflow-auto -mx-6 px-6">
             {loadingHistorico ? (
-              <div className="flex items-center justify-center h-32">
-                <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+              <div className="flex items-center justify-center h-48">
+                <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
               </div>
             ) : historico.length === 0 ? (
-              <div className="text-center py-8 text-gray-500">
-                <History className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Nenhum registro encontrado</p>
+              <div className="text-center py-12 text-gray-500">
+                <History className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                <p className="text-lg font-medium">Nenhum registro encontrado</p>
               </div>
             ) : (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="bg-gray-50/50">
                     <TableHead className="w-10"></TableHead>
-                    <TableHead>Data</TableHead>
-                    <TableHead>Operação</TableHead>
-                    <TableHead className="text-right">Valor</TableHead>
-                    <TableHead className="text-right">Saldo</TableHead>
+                    <TableHead className="font-semibold">Data</TableHead>
+                    <TableHead className="font-semibold">Operação</TableHead>
+                    <TableHead className="text-right font-semibold">Valor</TableHead>
+                    <TableHead className="text-right font-semibold">Saldo</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -223,12 +232,12 @@ export default function CreditoPage() {
                     const valor = tx.chips || tx.value || 0
 
                     return (
-                      <TableRow key={tx.id}>
+                      <TableRow key={tx.id} className="hover:bg-gray-50/50">
                         <TableCell>
                           {isCredito ? (
-                            <ArrowUpCircle className="h-4 w-4 text-red-500" />
+                            <ArrowUpCircle className="h-5 w-5 text-red-500" />
                           ) : (
-                            <ArrowDownCircle className="h-4 w-4 text-green-500" />
+                            <ArrowDownCircle className="h-5 w-5 text-green-500" />
                           )}
                         </TableCell>
                         <TableCell className="font-mono text-sm">
@@ -237,18 +246,18 @@ export default function CreditoPage() {
                         <TableCell>
                           <Badge
                             variant="outline"
-                            className={isCredito ? 'text-red-600 border-red-300' : 'text-green-600 border-green-300'}
+                            className={isCredito ? 'text-red-600 border-red-200 bg-red-50' : 'text-green-600 border-green-200 bg-green-50'}
                           >
                             {OPERATION_LABELS[tx.operation_type] || tx.operation_type}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-right font-mono">
+                        <TableCell className="text-right font-mono font-medium">
                           <span className={isCredito ? 'text-red-600' : 'text-green-600'}>
                             {isCredito ? '+' : '-'}
                             {tx.chips ? formatChips(valor) : formatCurrency(valor)}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right font-mono font-medium">
+                        <TableCell className="text-right font-mono font-bold text-gray-700">
                           {formatChips(tx.saldoApos)}
                         </TableCell>
                       </TableRow>

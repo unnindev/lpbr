@@ -168,82 +168,88 @@ export default async function DashboardPage() {
   ]
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
+      {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-500">Visão geral do clube</p>
+        <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">Dashboard</h1>
+        <p className="text-gray-500 mt-1">Visão geral do clube de poker</p>
       </div>
 
       {/* Cards principais */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {cards.map((card) => (
-          <Card key={card.title}>
-            <CardHeader className="flex flex-row items-center justify-between pb-2">
-              <CardTitle className="text-sm font-medium text-gray-500">
-                {card.title}
-              </CardTitle>
-              <div className={`p-2 rounded-lg ${card.bgColor}`}>
-                <card.icon className={`h-4 w-4 ${card.color}`} />
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-2xl font-bold ${card.color}`}>
-                {card.value}
-              </div>
-              {card.formula && (
-                <p className="text-xs text-gray-400 mt-1">{card.formula}</p>
-              )}
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+      <section>
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {cards.map((card) => (
+            <Card key={card.title} className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-sm font-medium text-gray-500 tracking-wide">
+                  {card.title}
+                </CardTitle>
+                <div className={`p-2.5 rounded-xl ${card.bgColor}`}>
+                  <card.icon className={`h-5 w-5 ${card.color}`} />
+                </div>
+              </CardHeader>
+              <CardContent className="pt-0">
+                <div className={`text-2xl lg:text-3xl font-bold tracking-tight ${card.color}`}>
+                  {card.value}
+                </div>
+                {card.formula && (
+                  <p className="text-xs text-gray-400 mt-2">{card.formula}</p>
+                )}
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </section>
 
       {/* Saldos por Banco */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Saldos por Banco</h2>
+      <section>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Landmark className="h-5 w-5 text-gray-400" />
+          Saldos por Banco
+        </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {bankBalances.map((bank: { bank_id: string; bank_name: string; saldo: number }) => (
-            <Card key={bank.bank_id}>
+            <Card key={bank.bank_id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">
+                <CardTitle className="text-sm font-medium text-gray-500 truncate">
                   {bank.bank_name}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className={`text-xl font-bold ${bank.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+              <CardContent className="pt-0">
+                <div className={`text-xl lg:text-2xl font-bold tracking-tight ${bank.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                   {formatCurrency(bank.saldo)}
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      </div>
+      </section>
 
       {/* Dados Mensais */}
-      <div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">
+      <section>
+        <h2 className="text-lg font-semibold text-gray-900 mb-4 capitalize">
           Dados de {mesAtual}
         </h2>
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-3">
           {monthlyCards.map((card) => (
-            <Card key={card.title}>
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500">
+            <Card key={card.title} className="hover:shadow-md transition-shadow">
+              <CardHeader className="flex flex-row items-center justify-between pb-3">
+                <CardTitle className="text-sm font-medium text-gray-500 tracking-wide">
                   {card.title}
                 </CardTitle>
-                <div className={`p-2 rounded-lg ${card.bgColor}`}>
-                  <card.icon className={`h-4 w-4 ${card.color}`} />
+                <div className={`p-2.5 rounded-xl ${card.bgColor}`}>
+                  <card.icon className={`h-5 w-5 ${card.color}`} />
                 </div>
               </CardHeader>
-              <CardContent>
-                <div className={`text-2xl font-bold ${card.color}`}>
+              <CardContent className="pt-0">
+                <div className={`text-2xl lg:text-3xl font-bold tracking-tight ${card.color}`}>
                   {card.value}
                 </div>
               </CardContent>
             </Card>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   )
 }
