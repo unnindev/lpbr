@@ -137,12 +137,12 @@ export async function confirmarColetas(data: { date: string; coletas: ColetaItem
       const { error: rtError } = await supabase
         .from('ranking_transactions')
         .insert({
+          date: data.date,
           type: 'COLETA',
           chips,
           player_id: coleta.playerId,
           total_prize: coleta.premio,
           pct_collected: coleta.percentual,
-          created_by: user.id,
         })
 
       if (rtError) throw rtError
