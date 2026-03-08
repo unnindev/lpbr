@@ -120,6 +120,23 @@ const OPERATION_TYPES: OperationType[] = [
   'CASHBACK_PAGAMENTO_DIVIDA',
 ]
 
+// Operações que AUMENTAM fichas em circulação (saída para jogadores)
+const OPERACOES_SAIDA: OperationType[] = [
+  'COMPRA_FICHAS',
+  'CREDITO_FICHAS',
+  'ACORDO_PAGAMENTO',
+  'RANKING_PAGAMENTO_FICHAS',
+  'CASHBACK_FICHAS',
+]
+
+// Operações que DIMINUEM fichas em circulação (entrada/coleta)
+const OPERACOES_ENTRADA: OperationType[] = [
+  'SAQUE_FICHAS',
+  'CREDITO_PAGAMENTO_FICHAS',
+  'ACORDO_COLETA',
+  'RANKING_COLETA',
+]
+
 export default function ConciliacaoPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [transactions, setTransactions] = useState<TransactionEntry[]>([])
@@ -877,8 +894,20 @@ export default function ConciliacaoPage() {
                           <span className="text-gray-400">—</span>
                         )}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {tx.chips ? formatChips(tx.chips) : '—'}
+                      <TableCell className={`text-right font-mono font-semibold ${
+                        tx.operation_type && OPERACOES_SAIDA.includes(tx.operation_type)
+                          ? 'text-green-600'
+                          : tx.operation_type && OPERACOES_ENTRADA.includes(tx.operation_type)
+                          ? 'text-red-600'
+                          : ''
+                      }`}>
+                        {tx.chips ? (
+                          <>
+                            {tx.operation_type && OPERACOES_SAIDA.includes(tx.operation_type) ? '+' : ''}
+                            {tx.operation_type && OPERACOES_ENTRADA.includes(tx.operation_type) ? '-' : ''}
+                            {formatChips(tx.chips)}
+                          </>
+                        ) : '—'}
                       </TableCell>
                       <TableCell className="text-right font-mono">
                         {tx.value ? formatCurrency(tx.value) : '—'}
