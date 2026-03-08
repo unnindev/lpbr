@@ -160,6 +160,35 @@ export async function confirmarColetas(data: { date: string; coletas: ColetaItem
   }
 }
 
+export async function excluirTransacaoRanking(transactionId: string) {
+  const supabase = await createClient() as SupabaseClient
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: 'Usuário não autenticado' }
+  }
+
+  try {
+    // Excluir da tabela transactions
+    const { error } = await supabase
+      .from('transactions')
+      .delete()
+      .eq('id', transactionId)
+
+    if (error) throw error
+
+    revalidatePath('/ranking')
+    revalidatePath('/ranking/calculadora')
+    return { success: true }
+  } catch (error) {
+    console.error('Erro ao excluir transação:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro ao excluir transação',
+    }
+  }
+}
+
 interface PagamentoItem {
   playerId: string
   modalidade: 'FICHAS' | 'DINHEIRO' | 'ABATE_DIVIDA'

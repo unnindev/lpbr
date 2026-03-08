@@ -59,3 +59,7 @@ CREATE POLICY "agent_folders_insert" ON agent_folders
 -- Agent Folders: usuários autenticados podem atualizar
 CREATE POLICY "agent_folders_update" ON agent_folders
   FOR UPDATE USING (auth.uid() IS NOT NULL);
+
+-- Transactions: usuários autenticados podem deletar
+CREATE POLICY "transactions_delete" ON transactions
+  FOR DELETE USING (auth.uid() IS NOT NULL);

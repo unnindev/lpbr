@@ -20,9 +20,11 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
-import { listarRankingPorMes, getRankingStats } from '@/actions/ranking'
+import { Button } from '@/components/ui/button'
+import { listarRankingPorMes, getRankingStats, excluirTransacaoRanking } from '@/actions/ranking'
+import { toast } from 'sonner'
 import { formatChips, formatCurrency } from '@/lib/formatters'
-import { Trophy, ArrowDownCircle, ArrowUpCircle, Wallet, Loader2 } from 'lucide-react'
+import { Trophy, ArrowDownCircle, ArrowUpCircle, Wallet, Loader2, Trash2 } from 'lucide-react'
 
 interface RankingTransaction {
   id: string
@@ -85,6 +87,18 @@ export default function RankingPage() {
   }, [loadData])
 
   const anos = Array.from({ length: ano - 2023 + 2 }, (_, i) => 2024 + i)
+
+  const handleDelete = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta transação de ranking?')) return
+
+    const result = await excluirTransacaoRanking(id)
+    if (result.success) {
+      toast.success('Transação excluída!')
+      loadData()
+    } else {
+      toast.error(result.error || 'Erro ao excluir')
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -219,6 +233,7 @@ export default function RankingPage() {
                   <TableHead>Jogador</TableHead>
                   <TableHead className="text-right">Fichas</TableHead>
                   <TableHead className="text-right">Valor (R$)</TableHead>
+                  <TableHead className="w-16"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -260,6 +275,16 @@ export default function RankingPage() {
                     </TableCell>
                     <TableCell className="text-right font-mono">
                       {tx.value ? formatCurrency(tx.value) : '—'}
+                    </TableCell>
+                    <TableCell>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(tx.id)}
+                        className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
