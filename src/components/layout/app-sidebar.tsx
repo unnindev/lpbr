@@ -133,7 +133,7 @@ export function AppSidebar({ userRole, userName }: AppSidebarProps) {
             <SidebarGroupContent>
               <SidebarMenu>
                 {group.items.map((item) => {
-                  const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+                  const isActive = pathname === item.href
                   return (
                     <SidebarMenuItem key={item.href}>
                       <SidebarMenuButton

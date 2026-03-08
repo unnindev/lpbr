@@ -52,6 +52,7 @@ interface AgentWithFolder {
   platform: 'PPOKER' | 'SUPREMA'
   pct_rakeback: number
   pct_lpbr: number
+  pct_suprema: number | null
   is_active: boolean
   player: Player
   players: Player[]
@@ -69,7 +70,8 @@ export default function AgentesSupremaPage() {
 
   const [playerId, setPlayerId] = useState('')
   const [pctRakeback, setPctRakeback] = useState('30')
-  const [pctLpbr, setPctLpbr] = useState('70')
+  const [pctLpbr, setPctLpbr] = useState('50')
+  const [pctSuprema, setPctSuprema] = useState('20')
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -85,7 +87,8 @@ export default function AgentesSupremaPage() {
   const resetForm = () => {
     setPlayerId('')
     setPctRakeback('30')
-    setPctLpbr('70')
+    setPctLpbr('50')
+    setPctSuprema('20')
     setEditingId(null)
   }
 
@@ -99,15 +102,17 @@ export default function AgentesSupremaPage() {
     setPlayerId(agent.player.id)
     setPctRakeback(agent.pct_rakeback.toString())
     setPctLpbr(agent.pct_lpbr.toString())
+    setPctSuprema((agent.pct_suprema || 0).toString())
     setDialogOpen(true)
   }
 
   const handleSubmit = async () => {
-    const rakeback = parseFloat(pctRakeback)
-    const lpbr = parseFloat(pctLpbr)
+    const rakeback = parseFloat(pctRakeback) || 0
+    const lpbr = parseFloat(pctLpbr) || 0
+    const suprema = parseFloat(pctSuprema) || 0
 
-    if (rakeback + lpbr !== 100) {
-      toast.error('Rakeback% + LPBR% deve ser igual a 100%')
+    if (rakeback + lpbr + suprema !== 100) {
+      toast.error('Rakeback% + LPBR% + Suprema% deve ser igual a 100%')
       return
     }
 
@@ -117,6 +122,8 @@ export default function AgentesSupremaPage() {
       const result = await editarAgente(editingId, {
         pctRakeback: rakeback,
         pctLpbr: lpbr,
+        pctSuprema: suprema,
+        platform: 'SUPREMA',
       })
 
       if (result.success) {
@@ -139,6 +146,7 @@ export default function AgentesSupremaPage() {
         platform: 'SUPREMA',
         pctRakeback: rakeback,
         pctLpbr: lpbr,
+        pctSuprema: suprema,
       })
 
       if (result.success) {
@@ -266,6 +274,9 @@ export default function AgentesSupremaPage() {
                       <Badge variant="outline" className="text-blue-600 border-blue-600">
                         LPBR: {agent.pct_lpbr}%
                       </Badge>
+                      <Badge variant="outline" className="text-purple-600 border-purple-600">
+                        Suprema: {agent.pct_suprema || 0}%
+                      </Badge>
                       <Badge variant="secondary">
                         {agent.players.length} jogador{agent.players.length !== 1 ? 'es' : ''}
                       </Badge>
@@ -357,7 +368,7 @@ export default function AgentesSupremaPage() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-3 gap-4">
               <div className="space-y-2">
                 <Label>Rakeback %</Label>
                 <Input
@@ -365,10 +376,7 @@ export default function AgentesSupremaPage() {
                   min="0"
                   max="100"
                   value={pctRakeback}
-                  onChange={(e) => {
-                    setPctRakeback(e.target.value)
-                    setPctLpbr((100 - parseFloat(e.target.value || '0')).toString())
-                  }}
+                  onChange={(e) => setPctRakeback(e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -378,13 +386,23 @@ export default function AgentesSupremaPage() {
                   min="0"
                   max="100"
                   value={pctLpbr}
-                  onChange={(e) => {
-                    setPctLpbr(e.target.value)
-                    setPctRakeback((100 - parseFloat(e.target.value || '0')).toString())
-                  }}
+                  onChange={(e) => setPctLpbr(e.target.value)}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Suprema %</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={pctSuprema}
+                  onChange={(e) => setPctSuprema(e.target.value)}
                 />
               </div>
             </div>
+            <p className="text-sm text-gray-500">
+              Total: {(parseFloat(pctRakeback) || 0) + (parseFloat(pctLpbr) || 0) + (parseFloat(pctSuprema) || 0)}% (deve ser 100%)
+            </p>
           </div>
 
           <DialogFooter>

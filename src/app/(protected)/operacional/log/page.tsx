@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Calendar } from '@/components/ui/calendar'
@@ -144,6 +144,23 @@ export default function LogPage() {
     return 'ENVIO'
   }
 
+  // Calcular fichas que entraram e saíram no dia
+  const { fichasEntraram, fichasSairam } = useMemo(() => {
+    let entraram = 0
+    let sairam = 0
+
+    for (const log of logs) {
+      const tipo = getTipoFromNotes(log.notes)
+      if (tipo === 'ENVIO') {
+        entraram += log.chips
+      } else {
+        sairam += log.chips
+      }
+    }
+
+    return { fichasEntraram: entraram, fichasSairam: sairam }
+  }, [logs])
+
   return (
     <div className="flex gap-6 h-[calc(100vh-8rem)]">
       {/* Lado esquerdo - Calendário */}
@@ -166,22 +183,59 @@ export default function LogPage() {
 
       {/* Lado direito */}
       <div className="flex-1 flex flex-col gap-4 min-w-0">
-        {/* Card de Fichas em Circulação */}
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2">
-            <CardTitle className="text-sm font-medium text-gray-500">
-              Total Atual de Fichas em Circulação
-            </CardTitle>
-            <div className="p-2 rounded-lg bg-green-50">
-              <Coins className="h-4 w-4 text-green-600" />
-            </div>
-          </CardHeader>
-          <CardContent>
-            <div className="text-3xl font-bold text-green-600">
-              {formatChips(fichasCirculacao)}
-            </div>
-          </CardContent>
-        </Card>
+        {/* Cards de Métricas */}
+        <div className="grid grid-cols-3 gap-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Fichas em Circulação
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-blue-50">
+                <Coins className="h-4 w-4 text-blue-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">
+                {formatChips(fichasCirculacao)}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Total atual</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Entraram Hoje
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-green-50">
+                <ArrowUpCircle className="h-4 w-4 text-green-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-green-600">
+                {formatChips(fichasEntraram)}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Envios do dia</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-gray-500">
+                Saíram Hoje
+              </CardTitle>
+              <div className="p-2 rounded-lg bg-red-50">
+                <ArrowDownCircle className="h-4 w-4 text-red-600" />
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-red-600">
+                {formatChips(fichasSairam)}
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Recebimentos do dia</p>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Lista de Logs */}
         <Card className="flex-1 flex flex-col min-h-0">
@@ -373,8 +427,10 @@ export default function LogPage() {
                             <span className="text-gray-400">—</span>
                           )}
                         </TableCell>
-                        <TableCell className="text-right font-mono">
-                          {formatChips(log.chips)}
+                        <TableCell className={`text-right font-mono font-semibold ${
+                          tipoLog === 'ENVIO' ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {tipoLog === 'ENVIO' ? '+' : '-'}{formatChips(log.chips)}
                         </TableCell>
                         <TableCell className="text-right font-mono">
                           {log.value ? formatCurrency(log.value) : '—'}

@@ -76,6 +76,7 @@ interface NovoAgenteData {
   platform: 'PPOKER' | 'SUPREMA'
   pctRakeback: number
   pctLpbr: number
+  pctSuprema?: number  // Apenas para SUPREMA
 }
 
 export async function criarAgente(data: NovoAgenteData) {
@@ -87,19 +88,33 @@ export async function criarAgente(data: NovoAgenteData) {
   }
 
   // Validar soma = 100
-  if (data.pctRakeback + data.pctLpbr !== 100) {
-    return { success: false, error: 'Rakeback% + LPBR% deve ser igual a 100%' }
+  if (data.platform === 'SUPREMA') {
+    const total = data.pctRakeback + data.pctLpbr + (data.pctSuprema || 0)
+    if (total !== 100) {
+      return { success: false, error: 'Rakeback% + LPBR% + Suprema% deve ser igual a 100%' }
+    }
+  } else {
+    if (data.pctRakeback + data.pctLpbr !== 100) {
+      return { success: false, error: 'Rakeback% + LPBR% deve ser igual a 100%' }
+    }
   }
 
   try {
+    const insertData: Record<string, unknown> = {
+      player_id: data.playerId,
+      platform: data.platform,
+      pct_rakeback: data.pctRakeback,
+      pct_lpbr: data.pctLpbr,
+    }
+
+    // Adicionar pct_suprema se for Suprema
+    if (data.platform === 'SUPREMA' && data.pctSuprema !== undefined) {
+      insertData.pct_suprema = data.pctSuprema
+    }
+
     const { error } = await supabase
       .from('agents')
-      .insert({
-        player_id: data.playerId,
-        platform: data.platform,
-        pct_rakeback: data.pctRakeback,
-        pct_lpbr: data.pctLpbr,
-      })
+      .insert(insertData)
 
     if (error) {
       console.error('Erro Supabase ao criar agente:', error)
@@ -117,7 +132,7 @@ export async function criarAgente(data: NovoAgenteData) {
   }
 }
 
-export async function editarAgente(id: string, data: { pctRakeback: number; pctLpbr: number }) {
+export async function editarAgente(id: string, data: { pctRakeback: number; pctLpbr: number; pctSuprema?: number; platform?: 'PPOKER' | 'SUPREMA' }) {
   const supabase = await createClient() as SupabaseClient
 
   const { data: { user } } = await supabase.auth.getUser()
@@ -125,17 +140,32 @@ export async function editarAgente(id: string, data: { pctRakeback: number; pctL
     return { success: false, error: 'Usuário não autenticado' }
   }
 
-  if (data.pctRakeback + data.pctLpbr !== 100) {
-    return { success: false, error: 'Rakeback% + LPBR% deve ser igual a 100%' }
+  // Validar soma = 100
+  if (data.platform === 'SUPREMA') {
+    const total = data.pctRakeback + data.pctLpbr + (data.pctSuprema || 0)
+    if (total !== 100) {
+      return { success: false, error: 'Rakeback% + LPBR% + Suprema% deve ser igual a 100%' }
+    }
+  } else {
+    if (data.pctRakeback + data.pctLpbr !== 100) {
+      return { success: false, error: 'Rakeback% + LPBR% deve ser igual a 100%' }
+    }
   }
 
   try {
+    const updateData: Record<string, unknown> = {
+      pct_rakeback: data.pctRakeback,
+      pct_lpbr: data.pctLpbr,
+    }
+
+    // Adicionar pct_suprema se for Suprema
+    if (data.platform === 'SUPREMA') {
+      updateData.pct_suprema = data.pctSuprema || 0
+    }
+
     const { error } = await supabase
       .from('agents')
-      .update({
-        pct_rakeback: data.pctRakeback,
-        pct_lpbr: data.pctLpbr,
-      })
+      .update(updateData)
       .eq('id', id)
 
     if (error) throw error
