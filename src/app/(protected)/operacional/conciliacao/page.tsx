@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useCallback } from 'react'
+import { useEffect, useState, useCallback, useMemo } from 'react'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Calendar } from '@/components/ui/calendar'
@@ -37,6 +37,7 @@ import { Badge } from '@/components/ui/badge'
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PlayerSelector } from '@/components/shared/player-selector'
 import { BankSelector } from '@/components/shared/bank-selector'
+import { createClient } from '@/lib/supabase/client'
 import {
   listarTransacoesPorData,
   getResumo,
@@ -140,6 +141,31 @@ export default function ConciliacaoPage() {
   // Para acordos
   const [playerIdDe, setPlayerIdDe] = useState('')
   const [playerIdPara, setPlayerIdPara] = useState('')
+
+  // Lista de bancos para encontrar o banco CHIPPIX
+  const [banks, setBanks] = useState<Array<{ id: string; name: string }>>([])
+
+  // Carregar bancos para encontrar o CHIPPIX
+  useEffect(() => {
+    async function loadBanks() {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('banks')
+        .select('id, name')
+        .eq('is_active', true)
+      setBanks(data || [])
+    }
+    loadBanks()
+  }, [])
+
+  // Encontrar o banco CHIPPIX
+  const chippixBankId = useMemo(() => {
+    const chippixBank = banks.find(b =>
+      b.name.toLowerCase().includes('chippix') ||
+      b.name.toLowerCase().includes('chip pix')
+    )
+    return chippixBank?.id || ''
+  }, [banks])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -257,10 +283,32 @@ export default function ConciliacaoPage() {
 
   const abrirConciliacao = (tx: TransactionEntry) => {
     setTransacaoEditando(tx)
-    // Prefill form with existing values
-    setOperationType(tx.operation_type || '')
+
+    // Para transações CHIPPIX, pré-preencher tipo de operação e banco
+    if (tx.origem === 'CHIPPIX') {
+      // Detectar se é ENVIO ou RECEBIMENTO pelas notes
+      const isEnvio = tx.notes?.includes('[ENVIO]')
+      const isRecebimento = tx.notes?.includes('[RECEBIMENTO]')
+
+      // ENVIO = jogador recebe fichas = COMPRA_FICHAS
+      // RECEBIMENTO = jogador devolve fichas = SAQUE_FICHAS
+      if (isEnvio) {
+        setOperationType('COMPRA_FICHAS')
+      } else if (isRecebimento) {
+        setOperationType('SAQUE_FICHAS')
+      } else {
+        setOperationType(tx.operation_type || '')
+      }
+
+      // Pré-selecionar banco CHIPPIX
+      setBankId(chippixBankId || tx.bank?.id || '')
+    } else {
+      // Prefill form with existing values
+      setOperationType(tx.operation_type || '')
+      setBankId(tx.bank?.id || '')
+    }
+
     setPlayerId(tx.player?.id || '')
-    setBankId(tx.bank?.id || '')
     setChips(tx.chips?.toString() || '')
     setValue(tx.value?.toString() || '')
     setOrigem(tx.origem || 'MANUAL')
