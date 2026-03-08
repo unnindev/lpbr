@@ -26,6 +26,14 @@ interface Player {
   club_id: string
 }
 
+// Função para normalizar texto (remover acentos)
+const normalizeText = (text: string) => {
+  return text
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 interface PlayerSelectorProps {
   value?: string
   onSelect: (playerId: string, player: Player | null) => void
@@ -84,7 +92,13 @@ export function PlayerSelector({
         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
       </PopoverTrigger>
       <PopoverContent className="w-[400px] p-0" align="start">
-        <Command>
+        <Command
+            filter={(value, search) => {
+              const normalizedValue = normalizeText(value)
+              const normalizedSearch = normalizeText(search)
+              return normalizedValue.includes(normalizedSearch) ? 1 : 0
+            }}
+          >
           <CommandInput placeholder="Buscar por nick, nome ou código..." />
           <CommandList>
             <CommandEmpty>Nenhum jogador encontrado.</CommandEmpty>
