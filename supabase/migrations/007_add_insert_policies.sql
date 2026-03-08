@@ -43,3 +43,19 @@ CREATE POLICY "ranking_transactions_update" ON ranking_transactions
 -- Audit Log: usuários autenticados podem inserir
 CREATE POLICY "audit_log_insert" ON audit_log
   FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Agents: usuários autenticados podem inserir
+CREATE POLICY "agents_insert" ON agents
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Agents: usuários autenticados podem atualizar
+CREATE POLICY "agents_update" ON agents
+  FOR UPDATE USING (auth.uid() IS NOT NULL);
+
+-- Agent Folders: usuários autenticados podem inserir
+CREATE POLICY "agent_folders_insert" ON agent_folders
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
+-- Agent Folders: usuários autenticados podem atualizar
+CREATE POLICY "agent_folders_update" ON agent_folders
+  FOR UPDATE USING (auth.uid() IS NOT NULL);
