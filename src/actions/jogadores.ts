@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import { normalizeString } from '@/lib/formatters'
 
@@ -121,8 +121,11 @@ export async function criarJogador(data: NovoJogadorData) {
     return { success: false, error: 'Usuário não autenticado' }
   }
 
+  // Usar service client para operações de escrita (bypassa RLS)
+  const serviceClient = await createServiceClient() as SupabaseClient
+
   try {
-    const { error } = await supabase
+    const { error } = await serviceClient
       .from('players')
       .insert({
         club_id: data.club_id,
@@ -160,8 +163,11 @@ export async function editarJogador(id: string, data: { nick: string; name: stri
     return { success: false, error: 'Usuário não autenticado' }
   }
 
+  // Usar service client para operações de escrita (bypassa RLS)
+  const serviceClient = await createServiceClient() as SupabaseClient
+
   try {
-    const { error } = await supabase
+    const { error } = await serviceClient
       .from('players')
       .update({
         nick: data.nick,
@@ -191,6 +197,9 @@ export async function toggleJogadorAtivo(id: string) {
     return { success: false, error: 'Usuário não autenticado' }
   }
 
+  // Usar service client para operações de escrita (bypassa RLS)
+  const serviceClient = await createServiceClient() as SupabaseClient
+
   try {
     const { data: current } = await supabase
       .from('players')
@@ -198,7 +207,7 @@ export async function toggleJogadorAtivo(id: string) {
       .eq('id', id)
       .single()
 
-    const { error } = await supabase
+    const { error } = await serviceClient
       .from('players')
       .update({ is_active: !current?.is_active })
       .eq('id', id)
