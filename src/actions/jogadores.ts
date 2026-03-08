@@ -131,7 +131,14 @@ export async function criarJogador(data: NovoJogadorData) {
         notes: data.notes || null,
       })
 
-    if (error) throw error
+    if (error) {
+      console.error('Erro ao criar jogador:', error)
+      // Tratar erros específicos
+      if (error.code === '23505') {
+        return { success: false, error: 'Já existe um jogador com este código PPPoker' }
+      }
+      return { success: false, error: error.message || 'Erro ao criar jogador' }
+    }
 
     revalidatePath('/jogadores')
     return { success: true }
