@@ -87,7 +87,7 @@ export async function listarLogsPorData(date: string) {
     .from('transactions')
     .select(`
       *,
-      player:players(id, nick, name)
+      player:players(id, club_id, nick, name)
     `)
     .eq('type', 'LOG')
     .eq('date', date)

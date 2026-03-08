@@ -42,6 +42,7 @@ interface LogEntry {
   reconciled: boolean
   player: {
     id: string
+    club_id: string
     nick: string
     name: string
   } | null
@@ -366,6 +367,7 @@ export default function LogPage() {
                             <div>
                               <span className="font-medium">{log.player.nick}</span>
                               <span className="text-gray-500 text-sm ml-2">{log.player.name}</span>
+                              <span className="text-gray-400 text-xs ml-1">({log.player.club_id})</span>
                             </div>
                           ) : (
                             <span className="text-gray-400">—</span>
