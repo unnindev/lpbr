@@ -300,3 +300,37 @@ export async function getTotalCredito() {
   const result = await getJogadoresComCredito()
   return result.reduce((acc, j) => acc + j.divida, 0)
 }
+
+interface TransacaoCredito {
+  id: string
+  date: string
+  operation_type: string
+  chips: number | null
+  value: number | null
+  notes: string | null
+}
+
+export async function getHistoricoCreditoJogador(playerId: string): Promise<TransacaoCredito[]> {
+  const supabase = await createClient() as SupabaseClient
+
+  const { data, error } = await supabase
+    .from('transactions')
+    .select(`
+      id,
+      date,
+      operation_type,
+      chips,
+      value,
+      notes
+    `)
+    .eq('player_id', playerId)
+    .in('operation_type', ['CREDITO_FICHAS', 'CREDITO_PAGAMENTO_DINHEIRO', 'CREDITO_PAGAMENTO_FICHAS'])
+    .order('date', { ascending: false })
+
+  if (error) {
+    console.error('Erro ao buscar histórico de crédito:', error)
+    return []
+  }
+
+  return data as TransacaoCredito[]
+}
