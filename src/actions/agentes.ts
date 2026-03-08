@@ -11,6 +11,7 @@ interface Agent {
   platform: 'PPOKER' | 'SUPREMA'
   pct_rakeback: number
   pct_lpbr: number
+  pct_suprema: number | null
   is_active: boolean
   player: {
     id: string
@@ -39,6 +40,7 @@ export async function listarAgentes(platform: 'PPOKER' | 'SUPREMA') {
       platform,
       pct_rakeback,
       pct_lpbr,
+      pct_suprema,
       is_active,
       player:players!agents_player_id_fkey(id, nick, name, club_id)
     `)
