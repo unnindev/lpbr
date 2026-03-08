@@ -124,6 +124,8 @@ export default function ConciliacaoPage() {
   const [loading, setLoading] = useState(true)
   const [filter, setFilter] = useState<FilterType>('todos')
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [conciliarDialogOpen, setConciliarDialogOpen] = useState(false)
+  const [transacaoEditando, setTransacaoEditando] = useState<TransactionEntry | null>(null)
   const [saving, setSaving] = useState(false)
 
   // Form state
@@ -251,6 +253,75 @@ export default function ConciliacaoPage() {
     } else {
       toast.error(result.error || 'Erro ao excluir')
     }
+  }
+
+  const abrirConciliacao = (tx: TransactionEntry) => {
+    setTransacaoEditando(tx)
+    // Prefill form with existing values
+    setOperationType(tx.operation_type || '')
+    setPlayerId(tx.player?.id || '')
+    setBankId(tx.bank?.id || '')
+    setChips(tx.chips?.toString() || '')
+    setValue(tx.value?.toString() || '')
+    setOrigem(tx.origem || 'MANUAL')
+    setHasReceipt(tx.has_receipt || false)
+    setNotes(tx.notes || '')
+    setConciliarDialogOpen(true)
+  }
+
+  const handleConciliar = async () => {
+    if (!transacaoEditando) return
+    if (!operationType) {
+      toast.error('Selecione um tipo de operação')
+      return
+    }
+
+    const campos = CAMPOS_POR_TIPO[operationType]
+
+    // Validações
+    if (campos.jogador && !campos.acordo && !playerId) {
+      toast.error('Selecione um jogador')
+      return
+    }
+
+    if (campos.banco && !bankId) {
+      toast.error('Selecione um banco')
+      return
+    }
+
+    if (campos.fichas && !chips) {
+      toast.error('Informe o valor em fichas')
+      return
+    }
+
+    if (campos.valor && !value) {
+      toast.error('Informe o valor em R$')
+      return
+    }
+
+    setSaving(true)
+
+    const result = await conciliarTransacao(transacaoEditando.id, {
+      operationType,
+      playerId: playerId || undefined,
+      bankId: bankId || undefined,
+      chips: chips ? parseFloat(chips) : undefined,
+      value: value ? parseFloat(value) : undefined,
+      hasReceipt,
+      notes: notes || undefined,
+    })
+
+    if (result.success) {
+      toast.success('Transação conciliada com sucesso!')
+      setConciliarDialogOpen(false)
+      setTransacaoEditando(null)
+      resetForm()
+      loadData()
+    } else {
+      toast.error(result.error || 'Erro ao conciliar transação')
+    }
+
+    setSaving(false)
   }
 
   const filteredTransactions = transactions.filter((t) => {
@@ -540,6 +611,166 @@ export default function ConciliacaoPage() {
                 </DialogFooter>
               </DialogContent>
             </Dialog>
+
+            {/* Dialog de Conciliação */}
+            <Dialog open={conciliarDialogOpen} onOpenChange={(open) => {
+              setConciliarDialogOpen(open)
+              if (!open) {
+                setTransacaoEditando(null)
+                resetForm()
+              }
+            }}>
+              <DialogContent className="max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Conciliar Transação</DialogTitle>
+                  <DialogDescription>
+                    Defina o tipo de operação e complete os dados da transação
+                  </DialogDescription>
+                </DialogHeader>
+
+                <div className="space-y-4 py-4 max-h-[60vh] overflow-auto">
+                  {/* Informações da transação */}
+                  {transacaoEditando && (
+                    <div className="bg-gray-50 p-3 rounded-lg text-sm space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Jogador:</span>
+                        <span className="font-medium">
+                          {transacaoEditando.player?.nick || '—'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Fichas:</span>
+                        <span className="font-mono">
+                          {transacaoEditando.chips ? formatChips(transacaoEditando.chips) : '—'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-gray-500">Valor:</span>
+                        <span className="font-mono">
+                          {transacaoEditando.value ? formatCurrency(transacaoEditando.value) : '—'}
+                        </span>
+                      </div>
+                      {transacaoEditando.notes && (
+                        <div className="flex justify-between">
+                          <span className="text-gray-500">Obs:</span>
+                          <span>{transacaoEditando.notes}</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label>Tipo de Operação</Label>
+                    <Select
+                      value={operationType}
+                      onValueChange={(v) => setOperationType(v as OperationType)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {OPERATION_TYPES.map((type) => (
+                          <SelectItem key={type} value={type}>
+                            {OPERATION_TYPE_LABELS[type]}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {campos?.jogador && !campos?.acordo && (
+                    <div className="space-y-2">
+                      <Label>Jogador</Label>
+                      <PlayerSelector
+                        value={playerId}
+                        onSelect={(id) => setPlayerId(id)}
+                      />
+                    </div>
+                  )}
+
+                  {campos?.banco && (
+                    <div className="space-y-2">
+                      <Label>Banco</Label>
+                      <BankSelector
+                        value={bankId}
+                        onSelect={(id) => setBankId(id)}
+                      />
+                    </div>
+                  )}
+
+                  {campos?.fichas && (
+                    <div className="space-y-2">
+                      <Label>Valor (fichas)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={chips}
+                        onChange={(e) => setChips(e.target.value)}
+                        placeholder="0,00"
+                      />
+                    </div>
+                  )}
+
+                  {campos?.valor && (
+                    <div className="space-y-2">
+                      <Label>Valor (R$)</Label>
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={value}
+                        onChange={(e) => setValue(e.target.value)}
+                        placeholder="0,00"
+                      />
+                    </div>
+                  )}
+
+                  {campos?.comprovante && (
+                    <div className="flex items-center gap-2">
+                      <Checkbox
+                        id="hasReceiptConciliar"
+                        checked={hasReceipt}
+                        onCheckedChange={(checked) => setHasReceipt(checked as boolean)}
+                      />
+                      <Label htmlFor="hasReceiptConciliar" className="cursor-pointer">
+                        Possui comprovante
+                      </Label>
+                    </div>
+                  )}
+
+                  <div className="space-y-2">
+                    <Label>Observações (opcional)</Label>
+                    <Textarea
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      placeholder="Observações..."
+                      rows={2}
+                    />
+                  </div>
+                </div>
+
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => {
+                    setConciliarDialogOpen(false)
+                    setTransacaoEditando(null)
+                    resetForm()
+                  }}>
+                    Cancelar
+                  </Button>
+                  <Button onClick={handleConciliar} disabled={saving || !operationType}>
+                    {saving ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Conciliando...
+                      </>
+                    ) : (
+                      'Conciliar'
+                    )}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </CardHeader>
 
           <CardContent className="flex-1 overflow-auto">
@@ -563,7 +794,7 @@ export default function ConciliacaoPage() {
                     <TableHead className="text-right">Valor (R$)</TableHead>
                     <TableHead>Banco</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead className="w-20"></TableHead>
+                    <TableHead className="w-32">Ações</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -643,16 +874,28 @@ export default function ConciliacaoPage() {
                         )}
                       </TableCell>
                       <TableCell>
-                        {!tx.reconciled && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(tx.id)}
-                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
+                        <div className="flex items-center gap-1">
+                          {!tx.reconciled && (
+                            <>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => abrirConciliacao(tx)}
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                Conciliar
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDelete(tx.id)}
+                                className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
