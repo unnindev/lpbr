@@ -10,13 +10,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select'
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -216,27 +209,32 @@ export default function LogPage() {
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
+                  {/* Tipo - Botões toggle */}
                   <div className="space-y-2">
                     <Label>Tipo</Label>
-                    <Select value={tipo} onValueChange={(v) => setTipo(v as 'ENVIO' | 'RECEBIMENTO')}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="ENVIO">
-                          <div className="flex items-center gap-2">
-                            <ArrowUpCircle className="h-4 w-4 text-green-600" />
-                            Envio (jogador recebe fichas)
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="RECEBIMENTO">
-                          <div className="flex items-center gap-2">
-                            <ArrowDownCircle className="h-4 w-4 text-red-600" />
-                            Recebimento (jogador devolve fichas)
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={tipo === 'ENVIO' ? 'default' : 'outline'}
+                        className={`h-12 ${tipo === 'ENVIO' ? 'bg-green-600 hover:bg-green-700' : ''}`}
+                        onClick={() => setTipo('ENVIO')}
+                      >
+                        <ArrowUpCircle className="h-4 w-4 mr-2" />
+                        Envio
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={tipo === 'RECEBIMENTO' ? 'default' : 'outline'}
+                        className={`h-12 ${tipo === 'RECEBIMENTO' ? 'bg-red-600 hover:bg-red-700' : ''}`}
+                        onClick={() => setTipo('RECEBIMENTO')}
+                      >
+                        <ArrowDownCircle className="h-4 w-4 mr-2" />
+                        Recebimento
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500">
+                      {tipo === 'ENVIO' ? 'Jogador recebe fichas' : 'Jogador devolve fichas'}
+                    </p>
                   </div>
 
                   <div className="space-y-2">
@@ -256,20 +254,31 @@ export default function LogPage() {
                       value={chips}
                       onChange={(e) => setChips(e.target.value)}
                       placeholder="0,00"
+                      className="h-11"
                     />
                   </div>
 
+                  {/* Origem - Botões toggle */}
                   <div className="space-y-2">
                     <Label>Origem</Label>
-                    <Select value={origem} onValueChange={(v) => setOrigem(v as 'MANUAL' | 'CHIPPIX')}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="MANUAL">Manual</SelectItem>
-                        <SelectItem value="CHIPPIX">ChipPix</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="grid grid-cols-2 gap-2">
+                      <Button
+                        type="button"
+                        variant={origem === 'MANUAL' ? 'default' : 'outline'}
+                        className="h-11"
+                        onClick={() => setOrigem('MANUAL')}
+                      >
+                        Manual
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={origem === 'CHIPPIX' ? 'default' : 'outline'}
+                        className="h-11"
+                        onClick={() => setOrigem('CHIPPIX')}
+                      >
+                        ChipPix
+                      </Button>
+                    </div>
                     {origem === 'CHIPPIX' && chips && (
                       <p className="text-xs text-gray-500">
                         Valor em R$: {formatCurrency(
