@@ -85,11 +85,12 @@ export async function getResumo(dateStr: string): Promise<DaySummary> {
     .gt('chips', 0)
 
   // Fichas recebidas (SAQUE_FICHAS, CREDITO_PAGAMENTO_FICHAS, ACORDO_COLETA, etc.)
+  // RAKE não entra aqui pois as fichas desaparecem do sistema, não são recebidas de volta
   const { data: recebidas } = await supabase
     .from('transactions')
     .select('chips')
     .eq('date', dateStr)
-    .in('operation_type', ['SAQUE_FICHAS', 'CREDITO_PAGAMENTO_FICHAS', 'ACORDO_COLETA', 'RANKING_COLETA', 'RAKE'])
+    .in('operation_type', ['SAQUE_FICHAS', 'CREDITO_PAGAMENTO_FICHAS', 'ACORDO_COLETA', 'RANKING_COLETA'])
     .gt('chips', 0)
 
   // Entradas de caixa
