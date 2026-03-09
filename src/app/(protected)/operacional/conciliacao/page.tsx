@@ -107,7 +107,7 @@ const OPERATION_TYPES: OperationType[] = [
   'SAQUE_FICHAS',
   'CREDITO_PAGAMENTO_DINHEIRO',
   'CREDITO_PAGAMENTO_FICHAS',
-  'CUSTO_DESPESA',
+  // CUSTO_DESPESA removido - custos devem ser cadastrados em Financeiro → Custos
   'DEPOSITO_AVULSO',
   'SAQUE_AVULSO',
   'ACORDO_COLETA',
