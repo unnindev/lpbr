@@ -16,7 +16,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { listarAgentes, salvarRakeSemanal } from '@/actions/agentes'
-import { formatCurrency, formatChips } from '@/lib/formatters'
+import { formatChips } from '@/lib/formatters'
 import { getWeekNumber } from '@/lib/competencia'
 import { ChevronLeft, ChevronRight, Loader2, Save, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
@@ -35,7 +35,7 @@ interface Agent {
 
 interface RakeEntry {
   agentId: string
-  valorRake: string
+  valorPagar: string
 }
 
 export default function RakeSemanalPage() {
@@ -46,8 +46,8 @@ export default function RakeSemanalPage() {
   const [saving, setSaving] = useState(false)
   const [tab, setTab] = useState<'PPOKER' | 'SUPREMA'>('PPOKER')
 
-  // Rake values por agente
-  const [rakeValues, setRakeValues] = useState<Record<string, string>>({})
+  // Valores a pagar por agente
+  const [valorPagar, setValorPagar] = useState<Record<string, string>>({})
 
   const weekStart = startOfWeek(currentWeek, { weekStartsOn: 1 })
   const weekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 })
@@ -72,41 +72,31 @@ export default function RakeSemanalPage() {
 
   const handlePrevWeek = () => {
     setCurrentWeek(subWeeks(currentWeek, 1))
-    setRakeValues({})
+    setValorPagar({})
   }
 
   const handleNextWeek = () => {
     setCurrentWeek(addWeeks(currentWeek, 1))
-    setRakeValues({})
+    setValorPagar({})
   }
 
-  const updateRakeValue = (agentId: string, value: string) => {
-    setRakeValues((prev) => ({ ...prev, [agentId]: value }))
-  }
-
-  const calcularRakeback = (agentId: string, pctRakeback: number) => {
-    const valorRake = parseFloat(rakeValues[agentId] || '0') || 0
-    return valorRake * (pctRakeback / 100)
-  }
-
-  const calcularLpbr = (agentId: string, pctLpbr: number) => {
-    const valorRake = parseFloat(rakeValues[agentId] || '0') || 0
-    return valorRake * (pctLpbr / 100)
+  const updateValorPagar = (agentId: string, value: string) => {
+    setValorPagar((prev) => ({ ...prev, [agentId]: value }))
   }
 
   const handleSalvarTudo = async () => {
     const agents = tab === 'PPOKER' ? agentsPPoker : agentsSuprema
-    const entries: { agentId: string; valorRake: number }[] = []
+    const entries: { agentId: string; valorPagar: number }[] = []
 
     for (const agent of agents) {
-      const valor = parseFloat(rakeValues[agent.id] || '0')
+      const valor = parseFloat(valorPagar[agent.id] || '0')
       if (valor > 0) {
-        entries.push({ agentId: agent.id, valorRake: valor })
+        entries.push({ agentId: agent.id, valorPagar: valor })
       }
     }
 
     if (entries.length === 0) {
-      toast.error('Preencha pelo menos um valor de rake')
+      toast.error('Preencha pelo menos um valor a pagar')
       return
     }
 
@@ -121,7 +111,7 @@ export default function RakeSemanalPage() {
 
     if (result.success) {
       toast.success('Rake semanal salvo com sucesso!')
-      setRakeValues({})
+      setValorPagar({})
     } else {
       toast.error(result.error || 'Erro ao salvar')
     }
@@ -131,10 +121,8 @@ export default function RakeSemanalPage() {
 
   const agents = tab === 'PPOKER' ? agentsPPoker : agentsSuprema
 
-  // Totais
-  const totalRake = agents.reduce((acc, a) => acc + (parseFloat(rakeValues[a.id] || '0') || 0), 0)
-  const totalRakeback = agents.reduce((acc, a) => acc + calcularRakeback(a.id, a.pct_rakeback), 0)
-  const totalLpbr = agents.reduce((acc, a) => acc + calcularLpbr(a.id, a.pct_lpbr), 0)
+  // Total a pagar
+  const totalPagar = agents.reduce((acc, a) => acc + (parseFloat(valorPagar[a.id] || '0') || 0), 0)
 
   return (
     <div className="space-y-6">
@@ -175,10 +163,8 @@ export default function RakeSemanalPage() {
         <TabsContent value="PPOKER" className="mt-4">
           <RakeTable
             agents={agentsPPoker}
-            rakeValues={rakeValues}
-            updateRakeValue={updateRakeValue}
-            calcularRakeback={calcularRakeback}
-            calcularLpbr={calcularLpbr}
+            valorPagar={valorPagar}
+            updateValorPagar={updateValorPagar}
             loading={loading}
           />
         </TabsContent>
@@ -186,32 +172,20 @@ export default function RakeSemanalPage() {
         <TabsContent value="SUPREMA" className="mt-4">
           <RakeTable
             agents={agentsSuprema}
-            rakeValues={rakeValues}
-            updateRakeValue={updateRakeValue}
-            calcularRakeback={calcularRakeback}
-            calcularLpbr={calcularLpbr}
+            valorPagar={valorPagar}
+            updateValorPagar={updateValorPagar}
             loading={loading}
           />
         </TabsContent>
       </Tabs>
 
-      {/* Totais e botão salvar */}
+      {/* Total e botão salvar */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-8">
-              <div>
-                <p className="text-sm text-gray-500">Total Rake</p>
-                <p className="text-xl font-bold">{formatChips(totalRake)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Total Rakeback</p>
-                <p className="text-xl font-bold text-green-600">{formatChips(totalRakeback)}</p>
-              </div>
-              <div>
-                <p className="text-sm text-gray-500">Total LPBR</p>
-                <p className="text-xl font-bold text-blue-600">{formatChips(totalLpbr)}</p>
-              </div>
+            <div>
+              <p className="text-sm text-gray-500">Total a Pagar</p>
+              <p className="text-xl font-bold text-green-600">{formatChips(totalPagar)}</p>
             </div>
 
             <Button onClick={handleSalvarTudo} disabled={saving} size="lg">
@@ -236,17 +210,13 @@ export default function RakeSemanalPage() {
 
 function RakeTable({
   agents,
-  rakeValues,
-  updateRakeValue,
-  calcularRakeback,
-  calcularLpbr,
+  valorPagar,
+  updateValorPagar,
   loading,
 }: {
   agents: Agent[]
-  rakeValues: Record<string, string>
-  updateRakeValue: (id: string, value: string) => void
-  calcularRakeback: (id: string, pct: number) => number
-  calcularLpbr: (id: string, pct: number) => number
+  valorPagar: Record<string, string>
+  updateValorPagar: (id: string, value: string) => void
   loading: boolean
 }) {
   if (loading) {
@@ -280,10 +250,7 @@ function RakeTable({
           <TableHeader>
             <TableRow>
               <TableHead>Agente</TableHead>
-              <TableHead className="text-center">Rakeback%</TableHead>
-              <TableHead className="text-center">Valor Rake</TableHead>
-              <TableHead className="text-right">Rakeback (a pagar)</TableHead>
-              <TableHead className="text-right">LPBR</TableHead>
+              <TableHead className="text-right">Valor a Pagar (fichas)</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -295,23 +262,16 @@ function RakeTable({
                     <span className="text-gray-500 text-sm ml-2">{agent.player.name}</span>
                   </div>
                 </TableCell>
-                <TableCell className="text-center">{agent.pct_rakeback}%</TableCell>
-                <TableCell className="w-40">
+                <TableCell className="w-48">
                   <Input
                     type="number"
                     min="0"
                     step="0.01"
-                    value={rakeValues[agent.id] || ''}
-                    onChange={(e) => updateRakeValue(agent.id, e.target.value)}
+                    value={valorPagar[agent.id] || ''}
+                    onChange={(e) => updateValorPagar(agent.id, e.target.value)}
                     placeholder="0,00"
                     className="text-right"
                   />
-                </TableCell>
-                <TableCell className="text-right font-mono text-green-600 font-medium">
-                  {formatChips(calcularRakeback(agent.id, agent.pct_rakeback))}
-                </TableCell>
-                <TableCell className="text-right font-mono text-blue-600 font-medium">
-                  {formatChips(calcularLpbr(agent.id, agent.pct_lpbr))}
                 </TableCell>
               </TableRow>
             ))}

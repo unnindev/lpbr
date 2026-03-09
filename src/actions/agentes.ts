@@ -271,7 +271,7 @@ export async function removerJogadorPasta(agentId: string, playerId: string) {
 // Rake Semanal
 interface RakeSemanalEntry {
   agentId: string
-  valorRake: number
+  valorPagar: number
 }
 
 export async function salvarRakeSemanal(data: {
@@ -289,27 +289,25 @@ export async function salvarRakeSemanal(data: {
 
   try {
     for (const entry of data.entries) {
-      if (entry.valorRake <= 0) continue
+      if (entry.valorPagar <= 0) continue
 
       // Buscar dados do agente
       const { data: agent } = await supabase
         .from('agents')
-        .select('player_id, pct_rakeback')
+        .select('player_id')
         .eq('id', entry.agentId)
         .single()
 
       if (!agent) continue
 
-      const rakeback = entry.valorRake * (agent.pct_rakeback / 100)
-
-      // Criar transação de rake do agente
+      // Criar transação de rake do agente (valor direto, sem cálculo)
       const { error } = await supabase
         .from('transactions')
         .insert({
           date: data.weekEnd,
           operation_type: 'RAKE_AGENTE',
           type: 'LOG',
-          chips: rakeback,
+          chips: entry.valorPagar,
           player_id: agent.player_id,
           reconciled: false,
           notes: `Rakeback semana ${data.weekStart} a ${data.weekEnd} (${data.platform})`,
