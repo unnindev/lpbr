@@ -317,7 +317,8 @@ export default function ConciliacaoPage() {
 
     setPlayerId(tx.player?.id || '')
     setChips(tx.chips?.toString() || '')
-    setValue(tx.value?.toString() || '')
+    // Auto-preencher valor igual às fichas se não tiver valor definido
+    setValue(tx.value?.toString() || tx.chips?.toString() || '')
     setOrigem(tx.origem || 'MANUAL')
     setHasReceipt(tx.has_receipt || false)
     setNotes(tx.notes || '')
@@ -374,6 +375,47 @@ export default function ConciliacaoPage() {
       loadData()
     } else {
       toast.error(result.error || 'Erro ao conciliar transação')
+    }
+
+    setSaving(false)
+  }
+
+  // Conciliação rápida para CHIPPIX (um clique)
+  const handleConciliacaoRapida = async (tx: TransactionEntry) => {
+    if (!tx.player?.id || !tx.chips) {
+      toast.error('Transação sem jogador ou fichas definidos')
+      return
+    }
+
+    // Detectar tipo de operação
+    const isEnvio = tx.notes?.includes('[ENVIO]')
+    const opType: OperationType = isEnvio ? 'COMPRA_FICHAS' : 'SAQUE_FICHAS'
+
+    // Usar banco CHIPPIX
+    const bankIdToUse = chippixBankId || tx.bank?.id
+
+    if (!bankIdToUse) {
+      toast.error('Banco CHIPPIX não encontrado. Configure um banco com "ChipPix" no nome.')
+      return
+    }
+
+    setSaving(true)
+
+    const result = await conciliarTransacao(tx.id, {
+      operationType: opType,
+      playerId: tx.player.id,
+      bankId: bankIdToUse,
+      chips: tx.chips,
+      value: tx.value || tx.chips, // Usar valor calculado ou chips
+      hasReceipt: false,
+      notes: tx.notes || undefined,
+    })
+
+    if (result.success) {
+      toast.success('Transação conciliada!')
+      loadData()
+    } else {
+      toast.error(result.error || 'Erro ao conciliar')
     }
 
     setSaving(false)
@@ -707,7 +749,16 @@ export default function ConciliacaoPage() {
                     <Label>Tipo de Operação</Label>
                     <Select
                       value={operationType}
-                      onValueChange={(v) => setOperationType(v as OperationType)}
+                      onValueChange={(v) => {
+                        const newOpType = v as OperationType
+                        setOperationType(newOpType)
+
+                        // Auto-preencher valor (R$) igual às fichas se o tipo requer ambos
+                        const newCampos = CAMPOS_POR_TIPO[newOpType]
+                        if (newCampos?.fichas && newCampos?.valor && chips && !value) {
+                          setValue(chips)
+                        }
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione...">
@@ -934,14 +985,33 @@ export default function ConciliacaoPage() {
                       <TableCell>
                         <div className="flex items-center gap-1">
                           {!tx.reconciled ? (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => abrirConciliacao(tx)}
-                              className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                            >
-                              Conciliar
-                            </Button>
+                            <>
+                              {/* Botão de conciliação rápida para CHIPPIX */}
+                              {tx.origem === 'CHIPPIX' && tx.player?.id && tx.chips ? (
+                                <Button
+                                  variant="default"
+                                  size="sm"
+                                  onClick={() => handleConciliacaoRapida(tx)}
+                                  disabled={saving}
+                                  className="bg-green-600 hover:bg-green-700"
+                                  title="Conciliar automaticamente como CHIPPIX"
+                                >
+                                  {saving ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <CheckCircle2 className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              ) : null}
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => abrirConciliacao(tx)}
+                                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50"
+                              >
+                                Conciliar
+                              </Button>
+                            </>
                           ) : (
                             <Button
                               variant="ghost"
