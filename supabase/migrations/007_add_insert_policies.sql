@@ -12,6 +12,10 @@ CREATE POLICY "players_insert" ON players
 CREATE POLICY "players_update" ON players
   FOR UPDATE USING (auth.uid() IS NOT NULL);
 
+-- Banks: usuários autenticados podem inserir
+CREATE POLICY "banks_insert" ON banks
+  FOR INSERT WITH CHECK (auth.uid() IS NOT NULL);
+
 -- Banks: usuários autenticados podem atualizar
 CREATE POLICY "banks_update" ON banks
   FOR UPDATE USING (auth.uid() IS NOT NULL);

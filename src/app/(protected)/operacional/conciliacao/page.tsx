@@ -930,9 +930,20 @@ export default function ConciliacaoPage() {
                             {OPERATION_TYPE_LABELS[tx.operation_type] || tx.operation_type}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="text-amber-600 border-amber-600">
-                            Pendente
-                          </Badge>
+                          // Mostrar direção (ENVIO/RECEBIMENTO) se disponível nas notes
+                          tx.notes?.includes('[ENVIO]') ? (
+                            <Badge variant="outline" className="text-green-600 border-green-600">
+                              Envio (pendente)
+                            </Badge>
+                          ) : tx.notes?.includes('[RECEBIMENTO]') ? (
+                            <Badge variant="outline" className="text-red-600 border-red-600">
+                              Recebimento (pendente)
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-amber-600 border-amber-600">
+                              Pendente
+                            </Badge>
+                          )
                         )}
                       </TableCell>
                       <TableCell>
@@ -946,16 +957,24 @@ export default function ConciliacaoPage() {
                         )}
                       </TableCell>
                       <TableCell className={`text-right font-mono font-semibold ${
+                        // Cor baseada em operation_type (após conciliação) ou notes (antes)
                         tx.operation_type && OPERACOES_SAIDA.includes(tx.operation_type)
                           ? 'text-green-600'
                           : tx.operation_type && OPERACOES_ENTRADA.includes(tx.operation_type)
+                          ? 'text-red-600'
+                          : !tx.operation_type && tx.notes?.includes('[ENVIO]')
+                          ? 'text-green-600'
+                          : !tx.operation_type && tx.notes?.includes('[RECEBIMENTO]')
                           ? 'text-red-600'
                           : ''
                       }`}>
                         {tx.chips ? (
                           <>
-                            {tx.operation_type && OPERACOES_SAIDA.includes(tx.operation_type) ? '+' : ''}
-                            {tx.operation_type && OPERACOES_ENTRADA.includes(tx.operation_type) ? '-' : ''}
+                            {/* Sinal baseado em operation_type (após conciliação) ou notes (antes) */}
+                            {(tx.operation_type && OPERACOES_SAIDA.includes(tx.operation_type)) ||
+                             (!tx.operation_type && tx.notes?.includes('[ENVIO]')) ? '+' : ''}
+                            {(tx.operation_type && OPERACOES_ENTRADA.includes(tx.operation_type)) ||
+                             (!tx.operation_type && tx.notes?.includes('[RECEBIMENTO]')) ? '-' : ''}
                             {formatChips(tx.chips)}
                           </>
                         ) : '—'}
