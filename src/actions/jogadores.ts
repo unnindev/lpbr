@@ -214,6 +214,49 @@ export async function toggleJogadorAtivo(id: string) {
   }
 }
 
+export async function excluirJogador(id: string) {
+  const supabase = await createClient() as SupabaseClient
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) {
+    return { success: false, error: 'Usuário não autenticado' }
+  }
+
+  try {
+    // Verificar se existem transações associadas ao jogador
+    const { count, error: countError } = await supabase
+      .from('transactions')
+      .select('id', { count: 'exact', head: true })
+      .eq('player_id', id)
+
+    if (countError) throw countError
+
+    if (count && count > 0) {
+      return {
+        success: false,
+        error: `Este jogador possui ${count} transação(ões) associada(s) e não pode ser excluído. Considere desativá-lo em vez de excluir.`,
+      }
+    }
+
+    // Excluir jogador
+    const { error } = await supabase
+      .from('players')
+      .delete()
+      .eq('id', id)
+
+    if (error) throw error
+
+    revalidatePath('/jogadores')
+    return { success: true }
+  } catch (error) {
+    console.error('Erro ao excluir jogador:', error)
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Erro ao excluir jogador',
+    }
+  }
+}
+
 interface TransacaoJogador {
   id: string
   date: string

@@ -29,6 +29,7 @@ import {
   criarJogador,
   editarJogador,
   toggleJogadorAtivo,
+  excluirJogador,
 } from '@/actions/jogadores'
 import { formatChips, formatCurrency } from '@/lib/formatters'
 import {
@@ -40,6 +41,7 @@ import {
   UserCircle,
   TrendingUp,
   TrendingDown,
+  Trash2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -184,6 +186,19 @@ export default function JogadoresPage() {
     }
   }
 
+  const handleDelete = async (id: string, nick: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (!confirm(`Tem certeza que deseja excluir o jogador "${nick}"?`)) return
+
+    const result = await excluirJogador(id)
+    if (result.success) {
+      toast.success('Jogador excluído com sucesso!')
+      loadData()
+    } else {
+      toast.error(result.error || 'Erro ao excluir jogador')
+    }
+  }
+
   const activeCount = players.filter((p) => p.is_active).length
 
   return (
@@ -272,17 +287,29 @@ export default function JogadoresPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={(e) => {
-                            e.stopPropagation()
-                            handleEdit(player)
-                          }}
-                          className="text-gray-400 hover:text-gray-700 h-9 w-9"
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleEdit(player)
+                            }}
+                            className="text-gray-400 hover:text-gray-700 h-9 w-9"
+                            title="Editar jogador"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={(e) => handleDelete(player.id, player.nick, e)}
+                            className="text-red-400 hover:text-red-700 hover:bg-red-50 h-9 w-9"
+                            title="Excluir jogador"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}
