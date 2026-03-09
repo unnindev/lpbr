@@ -58,15 +58,39 @@ async function getDashboardData() {
 
   const custoMensal = (custosData || []).reduce((acc: number, t: { value: number }) => acc + (t.value || 0), 0)
 
-  // Cashback de agentes do mês (RAKE_AGENTE)
+  // Cashback do mês (todos os tipos)
   const { data: cashbackData } = await supabase
     .from('transactions')
-    .select('chips')
-    .eq('operation_type', 'RAKE_AGENTE')
+    .select('chips, value, operation_type')
+    .in('operation_type', ['RAKE_AGENTE', 'CASHBACK_FICHAS', 'CASHBACK_DINHEIRO', 'CASHBACK_PAGAMENTO_DIVIDA'])
     .gte('date', startOfMonth)
     .lt('date', endOfMonth)
 
-  const cashbackAgentes = (cashbackData || []).reduce((acc: number, t: { chips: number }) => acc + (t.chips || 0), 0)
+  // Calcular cada tipo separadamente
+  let cashbackDinheiro = 0
+  let cashbackFichas = 0
+  let cashbackPagamentoDivida = 0
+  let rakeAgente = 0
+
+  for (const t of cashbackData || []) {
+    switch (t.operation_type) {
+      case 'CASHBACK_DINHEIRO':
+        cashbackDinheiro += t.value || 0
+        break
+      case 'CASHBACK_FICHAS':
+        cashbackFichas += t.chips || 0
+        break
+      case 'CASHBACK_PAGAMENTO_DIVIDA':
+        cashbackPagamentoDivida += t.chips || 0
+        break
+      case 'RAKE_AGENTE':
+        rakeAgente += t.chips || 0
+        break
+    }
+  }
+
+  // Total: fichas + dinheiro (tratando como mesma unidade)
+  const cashbackTotal = cashbackDinheiro + cashbackFichas + cashbackPagamentoDivida + rakeAgente
 
   return {
     saldoGeral: saldoGeral || {
@@ -80,7 +104,13 @@ async function getDashboardData() {
     bankBalances: bankBalances || [],
     rakeMensal,
     custoMensal,
-    cashbackAgentes,
+    cashback: {
+      dinheiro: cashbackDinheiro,
+      fichas: cashbackFichas,
+      pagamentoDivida: cashbackPagamentoDivida,
+      rakeAgente: rakeAgente,
+      total: cashbackTotal,
+    },
   }
 }
 
@@ -91,7 +121,7 @@ export default async function DashboardPage() {
     bankBalances,
     rakeMensal,
     custoMensal,
-    cashbackAgentes,
+    cashback,
   } = await getDashboardData()
 
   const now = new Date()
@@ -157,13 +187,6 @@ export default async function DashboardPage() {
       icon: PiggyBank,
       color: 'text-red-600',
       bgColor: 'bg-red-50',
-    },
-    {
-      title: 'Cashback Agentes',
-      value: formatChips(cashbackAgentes),
-      icon: Wallet,
-      color: 'text-purple-600',
-      bgColor: 'bg-purple-50',
     },
   ]
 
@@ -248,6 +271,49 @@ export default async function DashboardPage() {
               </CardContent>
             </Card>
           ))}
+
+          {/* Card Cashback Total com detalhamento */}
+          <Card className="hover:shadow-md transition-shadow">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <CardTitle className="text-sm font-medium text-gray-500 tracking-wide">
+                Cashback Total
+              </CardTitle>
+              <div className="p-2.5 rounded-xl bg-purple-50">
+                <Wallet className="h-5 w-5 text-purple-600" />
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="text-2xl lg:text-3xl font-bold tracking-tight text-purple-600">
+                {formatChips(cashback.total)}
+              </div>
+              <div className="mt-3 space-y-1 text-sm">
+                {cashback.dinheiro > 0 && (
+                  <div className="flex justify-between text-gray-500">
+                    <span>Dinheiro:</span>
+                    <span className="font-mono">{formatCurrency(cashback.dinheiro)}</span>
+                  </div>
+                )}
+                {cashback.fichas > 0 && (
+                  <div className="flex justify-between text-gray-500">
+                    <span>Fichas:</span>
+                    <span className="font-mono">{formatChips(cashback.fichas)}</span>
+                  </div>
+                )}
+                {cashback.pagamentoDivida > 0 && (
+                  <div className="flex justify-between text-gray-500">
+                    <span>Pag. Dívida:</span>
+                    <span className="font-mono">{formatChips(cashback.pagamentoDivida)}</span>
+                  </div>
+                )}
+                {cashback.rakeAgente > 0 && (
+                  <div className="flex justify-between text-gray-500">
+                    <span>Rake Agente:</span>
+                    <span className="font-mono">{formatChips(cashback.rakeAgente)}</span>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </section>
     </div>

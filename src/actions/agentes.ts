@@ -70,6 +70,9 @@ export async function listarAgentes(platform: 'PPOKER' | 'SUPREMA') {
     })
   }
 
+  // Ordenar por quantidade de jogadores (decrescente)
+  result.sort((a, b) => b.players.length - a.players.length)
+
   return result
 }
 

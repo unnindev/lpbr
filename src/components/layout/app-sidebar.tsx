@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import {
   Sidebar,
@@ -116,10 +117,14 @@ export function AppSidebar({ userRole, userName }: AppSidebarProps) {
   return (
     <Sidebar>
       <SidebarHeader className="h-16 border-b px-6 flex-row items-center">
-        <Link href="/dashboard" className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-            <span className="text-lg font-bold text-white">LP</span>
-          </div>
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <Image
+            src="/logo.png"
+            alt="LIVEBR Logo"
+            width={48}
+            height={48}
+            className="drop-shadow-sm"
+          />
           <span className="text-xl font-bold text-gray-900">LIVEBR</span>
         </Link>
       </SidebarHeader>

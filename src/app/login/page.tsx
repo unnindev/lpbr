@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
 import { createClient } from '@/lib/supabase/client'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -51,9 +52,14 @@ export default function LoginPage() {
       <Card className="w-full max-w-md shadow-xl border-0">
         <CardHeader className="space-y-1 text-center pb-8 pt-8">
           <div className="flex justify-center mb-6">
-            <div className="w-20 h-20 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
-              <span className="text-3xl font-bold text-white tracking-tight">LP</span>
-            </div>
+            <Image
+              src="/logo.png"
+              alt="LIVEBR Logo"
+              width={120}
+              height={120}
+              className="drop-shadow-lg"
+              priority
+            />
           </div>
           <CardTitle className="text-3xl font-bold tracking-tight">LIVEBR</CardTitle>
           <CardDescription className="text-base pt-1">

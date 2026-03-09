@@ -543,7 +543,7 @@ export default function ConciliacaoPage() {
                 Transações de {format(selectedDate, "dd 'de' MMMM", { locale: ptBR })}
               </CardTitle>
               <p className="text-sm text-gray-500 mt-1">
-                {filteredTransactions.length} transação{filteredTransactions.length !== 1 ? 'ões' : ''}
+                {filteredTransactions.length} {filteredTransactions.length !== 1 ? 'transações' : 'transação'}
               </p>
             </div>
 
