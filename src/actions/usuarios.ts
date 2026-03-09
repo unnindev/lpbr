@@ -95,8 +95,8 @@ export async function criarUsuario(data: CriarUsuarioData) {
   }
 
   try {
-    // Usar service client para operações admin
-    const serviceClient = await createServiceClient() as SupabaseClient
+    // Usar service client para operações admin (supabase-js direto, não SSR)
+    const serviceClient = createServiceClient() as SupabaseClient
 
     // Criar usuário no auth
     const { data: authData, error: authError } = await serviceClient.auth.admin.createUser({
@@ -269,8 +269,8 @@ export async function resetarSenha(userId: string, novaSenha: string) {
   }
 
   try {
-    // Usar service client para operações admin
-    const serviceClient = await createServiceClient() as SupabaseClient
+    // Usar service client para operações admin (supabase-js direto, não SSR)
+    const serviceClient = createServiceClient() as SupabaseClient
 
     const { error } = await serviceClient.auth.admin.updateUserById(userId, {
       password: novaSenha,

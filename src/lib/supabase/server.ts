@@ -1,4 +1,5 @@
 import { createServerClient } from '@supabase/ssr'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import type { Database } from '@/types/database.types'
 
@@ -28,23 +29,16 @@ export async function createClient() {
   )
 }
 
-export async function createServiceClient() {
-  // Service role client não precisa de cookies - ele bypassa RLS
-  return createServerClient<Database>(
+export function createServiceClient() {
+  // Service role client usa supabase-js diretamente (não SSR)
+  // Isso permite usar auth.admin.* sem restrições
+  return createSupabaseClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.SUPABASE_SERVICE_ROLE_KEY!,
     {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
-      },
-      cookies: {
-        getAll() {
-          return []
-        },
-        setAll() {
-          // Service role não usa cookies
-        },
       },
     }
   )
