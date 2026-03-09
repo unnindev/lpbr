@@ -67,3 +67,7 @@ CREATE POLICY "agent_folders_update" ON agent_folders
 -- Transactions: usuários autenticados podem deletar
 CREATE POLICY "transactions_delete" ON transactions
   FOR DELETE USING (auth.uid() IS NOT NULL);
+
+-- Players: usuários autenticados podem deletar
+CREATE POLICY "players_delete" ON players
+  FOR DELETE USING (auth.uid() IS NOT NULL);

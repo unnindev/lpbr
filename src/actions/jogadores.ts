@@ -238,13 +238,22 @@ export async function excluirJogador(id: string) {
       }
     }
 
-    // Excluir jogador
-    const { error } = await supabase
+    // Excluir jogador e retornar o registro deletado para confirmar
+    const { data: deleted, error } = await supabase
       .from('players')
       .delete()
       .eq('id', id)
+      .select('id')
 
     if (error) throw error
+
+    // Verificar se realmente deletou (RLS pode bloquear silenciosamente)
+    if (!deleted || deleted.length === 0) {
+      return {
+        success: false,
+        error: 'Não foi possível excluir o jogador. Verifique suas permissões.',
+      }
+    }
 
     revalidatePath('/jogadores')
     return { success: true }
