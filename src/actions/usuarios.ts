@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createServiceClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 import type { UserRole } from '@/types'
 
@@ -95,8 +95,11 @@ export async function criarUsuario(data: CriarUsuarioData) {
   }
 
   try {
+    // Usar service client para operações admin
+    const serviceClient = await createServiceClient() as SupabaseClient
+
     // Criar usuário no auth
-    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+    const { data: authData, error: authError } = await serviceClient.auth.admin.createUser({
       email: data.email,
       password: data.password,
       email_confirm: true,
@@ -115,7 +118,7 @@ export async function criarUsuario(data: CriarUsuarioData) {
     }
 
     // Inserir na tabela users
-    const { error: insertError } = await supabase
+    const { error: insertError } = await serviceClient
       .from('users')
       .insert({
         id: authData.user.id,
@@ -126,7 +129,7 @@ export async function criarUsuario(data: CriarUsuarioData) {
 
     if (insertError) {
       // Tentar deletar usuário do auth se falhar a inserção
-      await supabase.auth.admin.deleteUser(authData.user.id)
+      await serviceClient.auth.admin.deleteUser(authData.user.id)
       throw insertError
     }
 
@@ -266,7 +269,10 @@ export async function resetarSenha(userId: string, novaSenha: string) {
   }
 
   try {
-    const { error } = await supabase.auth.admin.updateUserById(userId, {
+    // Usar service client para operações admin
+    const serviceClient = await createServiceClient() as SupabaseClient
+
+    const { error } = await serviceClient.auth.admin.updateUserById(userId, {
       password: novaSenha,
     })
 

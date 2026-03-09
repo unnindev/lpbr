@@ -74,7 +74,7 @@ const menuGroups = [
     label: 'JOGADORES',
     items: [
       { title: 'Lista de Jogadores', href: '/jogadores', icon: UserCircle, roles: ['CODE', 'ADMIN', 'USER'] },
-      { title: 'Crédito', href: '/jogadores/credito', icon: CreditCard, roles: ['CODE', 'ADMIN'] },
+      { title: 'Crédito', href: '/jogadores/credito', icon: CreditCard, roles: ['CODE', 'ADMIN', 'USER'] },
     ],
   },
   {
