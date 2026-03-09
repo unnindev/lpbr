@@ -137,6 +137,20 @@ const OPERACOES_ENTRADA: OperationType[] = [
   'RANKING_COLETA',
 ]
 
+// Operações que são DESPESAS (saída de dinheiro do caixa)
+const OPERACOES_DESPESA: OperationType[] = [
+  'CUSTO_DESPESA',
+  'SAQUE_AVULSO',
+  'RANKING_PAGAMENTO_DINHEIRO',
+  'CASHBACK_DINHEIRO',
+]
+
+// Operações que são RECEITAS (entrada de dinheiro no caixa)
+const OPERACOES_RECEITA: OperationType[] = [
+  'DEPOSITO_AVULSO',
+  'CREDITO_PAGAMENTO_DINHEIRO',
+]
+
 export default function ConciliacaoPage() {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
   const [transactions, setTransactions] = useState<TransactionEntry[]>([])
@@ -915,14 +929,11 @@ export default function ConciliacaoPage() {
                           <Badge
                             variant="outline"
                             className={
-                              tx.operation_type.includes('COMPRA') ||
-                              tx.operation_type.includes('ENVIO') ||
-                              tx.operation_type.includes('CREDITO_FICHAS') ||
-                              tx.operation_type === 'ACORDO_PAGAMENTO'
+                              OPERACOES_SAIDA.includes(tx.operation_type) ||
+                              OPERACOES_RECEITA.includes(tx.operation_type)
                                 ? 'text-green-600 border-green-600'
-                                : tx.operation_type.includes('SAQUE') ||
-                                  tx.operation_type.includes('RECEB') ||
-                                  tx.operation_type === 'ACORDO_COLETA'
+                                : OPERACOES_ENTRADA.includes(tx.operation_type) ||
+                                  OPERACOES_DESPESA.includes(tx.operation_type)
                                 ? 'text-red-600 border-red-600'
                                 : ''
                             }
@@ -979,8 +990,20 @@ export default function ConciliacaoPage() {
                           </>
                         ) : '—'}
                       </TableCell>
-                      <TableCell className="text-right font-mono">
-                        {tx.value ? formatCurrency(tx.value) : '—'}
+                      <TableCell className={`text-right font-mono font-semibold ${
+                        tx.operation_type && OPERACOES_DESPESA.includes(tx.operation_type)
+                          ? 'text-red-600'
+                          : tx.operation_type && OPERACOES_RECEITA.includes(tx.operation_type)
+                          ? 'text-green-600'
+                          : ''
+                      }`}>
+                        {tx.value ? (
+                          <>
+                            {tx.operation_type && OPERACOES_DESPESA.includes(tx.operation_type) ? '-' : ''}
+                            {tx.operation_type && OPERACOES_RECEITA.includes(tx.operation_type) ? '+' : ''}
+                            {formatCurrency(tx.value)}
+                          </>
+                        ) : '—'}
                       </TableCell>
                       <TableCell>
                         {tx.bank ? (
