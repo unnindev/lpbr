@@ -46,7 +46,7 @@ interface PagamentoLine {
 export default function CalculadoraPage() {
   const hoje = new Date()
   const [date, setDate] = useState(format(hoje, 'yyyy-MM-dd'))
-  const [percentual, setPercentual] = useState('10')
+  const [percentual, setPercentual] = useState('8')
   const [coletas, setColetas] = useState<ColetaLine[]>([])
   const [pagamentos, setPagamentos] = useState<PagamentoLine[]>([])
   const [bankId, setBankId] = useState('')
