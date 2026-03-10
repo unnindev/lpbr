@@ -1,12 +1,26 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { format, startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns'
+import { format, startOfWeek, endOfWeek, addWeeks, subWeeks, addDays } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Calendar } from '@/components/ui/calendar'
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 import {
   Table,
   TableBody,
@@ -16,10 +30,13 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { listarAgentes, salvarRakeSemanal } from '@/actions/agentes'
-import { formatChips } from '@/lib/formatters'
+import { formatChips, formatCurrency } from '@/lib/formatters'
 import { getWeekNumber } from '@/lib/competencia'
-import { ChevronLeft, ChevronRight, Loader2, Save, Wallet } from 'lucide-react'
+import { ChevronLeft, ChevronRight, Loader2, Save, Wallet, CalendarIcon, Coins, Banknote, CreditCard } from 'lucide-react'
 import { toast } from 'sonner'
+import { cn } from '@/lib/utils'
+
+type PaymentModality = 'FICHAS' | 'DINHEIRO' | 'DIVIDA'
 
 interface Agent {
   id: string
@@ -34,16 +51,26 @@ interface Agent {
   }
 }
 
+interface AgentEntry {
+  valor: string
+  modalidade: PaymentModality
+}
+
 export default function RakeSemanalPage() {
   const [currentWeek, setCurrentWeek] = useState(new Date())
+  const [registrationDate, setRegistrationDate] = useState<Date>(() => {
+    // Por padrão, dia seguinte ao fim da semana
+    return addDays(endOfWeek(new Date(), { weekStartsOn: 1 }), 1)
+  })
   const [agentsPPoker, setAgentsPPoker] = useState<Agent[]>([])
   const [agentsSuprema, setAgentsSuprema] = useState<Agent[]>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [tab, setTab] = useState<'PPOKER' | 'SUPREMA'>('PPOKER')
 
-  // PPPoker: valor direto a pagar
-  const [valorPagar, setValorPagar] = useState<Record<string, string>>({})
+  // Entradas por agente: valor + modalidade
+  const [entriesPPoker, setEntriesPPoker] = useState<Record<string, AgentEntry>>({})
+  const [entriesSuprema, setEntriesSuprema] = useState<Record<string, AgentEntry>>({})
 
   // Suprema: valor do rake (para calcular as porcentagens)
   const [rakeValues, setRakeValues] = useState<Record<string, string>>({})
@@ -69,20 +96,45 @@ export default function RakeSemanalPage() {
     loadData()
   }, [loadData])
 
+  // Atualizar data de registro quando mudar a semana
+  useEffect(() => {
+    setRegistrationDate(addDays(weekEnd, 1))
+  }, [weekEnd])
+
   const handlePrevWeek = () => {
     setCurrentWeek(subWeeks(currentWeek, 1))
-    setValorPagar({})
+    setEntriesPPoker({})
+    setEntriesSuprema({})
     setRakeValues({})
   }
 
   const handleNextWeek = () => {
     setCurrentWeek(addWeeks(currentWeek, 1))
-    setValorPagar({})
+    setEntriesPPoker({})
+    setEntriesSuprema({})
     setRakeValues({})
   }
 
-  const updateValorPagar = (agentId: string, value: string) => {
-    setValorPagar((prev) => ({ ...prev, [agentId]: value }))
+  const updateEntryPPoker = (agentId: string, field: 'valor' | 'modalidade', value: string) => {
+    setEntriesPPoker((prev) => ({
+      ...prev,
+      [agentId]: {
+        valor: prev[agentId]?.valor || '',
+        modalidade: prev[agentId]?.modalidade || 'FICHAS',
+        [field]: value,
+      },
+    }))
+  }
+
+  const updateEntrySuprema = (agentId: string, field: 'valor' | 'modalidade', value: string) => {
+    setEntriesSuprema((prev) => ({
+      ...prev,
+      [agentId]: {
+        valor: prev[agentId]?.valor || '',
+        modalidade: prev[agentId]?.modalidade || 'FICHAS',
+        [field]: value,
+      },
+    }))
   }
 
   const updateRakeValue = (agentId: string, value: string) => {
@@ -95,23 +147,33 @@ export default function RakeSemanalPage() {
   }
 
   const handleSalvarTudo = async () => {
-    const entries: { agentId: string; valorPagar: number }[] = []
+    const entries: { agentId: string; valor: number; modalidade: PaymentModality }[] = []
 
     if (tab === 'PPOKER') {
-      // PPPoker: valor direto
+      // PPPoker: valor direto com modalidade
       for (const agent of agentsPPoker) {
-        const valor = parseFloat(valorPagar[agent.id] || '0')
+        const entry = entriesPPoker[agent.id]
+        const valor = parseFloat(entry?.valor || '0')
         if (valor > 0) {
-          entries.push({ agentId: agent.id, valorPagar: valor })
+          entries.push({
+            agentId: agent.id,
+            valor,
+            modalidade: entry?.modalidade || 'FICHAS',
+          })
         }
       }
     } else {
       // Suprema: calcular rakeback a partir do rake
       for (const agent of agentsSuprema) {
         const rake = parseFloat(rakeValues[agent.id] || '0')
+        const entry = entriesSuprema[agent.id]
         if (rake > 0) {
           const rakeback = calcularRakeback(agent, rake)
-          entries.push({ agentId: agent.id, valorPagar: rakeback })
+          entries.push({
+            agentId: agent.id,
+            valor: rakeback,
+            modalidade: entry?.modalidade || 'FICHAS',
+          })
         }
       }
     }
@@ -126,13 +188,15 @@ export default function RakeSemanalPage() {
     const result = await salvarRakeSemanal({
       weekStart: format(weekStart, 'yyyy-MM-dd'),
       weekEnd: format(weekEnd, 'yyyy-MM-dd'),
+      registrationDate: format(registrationDate, 'yyyy-MM-dd'),
       platform: tab,
       entries,
     })
 
     if (result.success) {
       toast.success('Rake semanal salvo com sucesso!')
-      setValorPagar({})
+      setEntriesPPoker({})
+      setEntriesSuprema({})
       setRakeValues({})
     } else {
       toast.error(result.error || 'Erro ao salvar')
@@ -141,18 +205,55 @@ export default function RakeSemanalPage() {
     setSaving(false)
   }
 
-  // Calcular totais
-  const totalPagarPPoker = agentsPPoker.reduce(
-    (acc, a) => acc + (parseFloat(valorPagar[a.id] || '0') || 0),
-    0
-  )
+  // Calcular totais por modalidade
+  const calcularTotais = () => {
+    let totalFichas = 0
+    let totalDinheiro = 0
+    let totalDivida = 0
 
-  const totalPagarSuprema = agentsSuprema.reduce((acc, agent) => {
-    const rake = parseFloat(rakeValues[agent.id] || '0') || 0
-    return acc + calcularRakeback(agent, rake)
-  }, 0)
+    if (tab === 'PPOKER') {
+      for (const agent of agentsPPoker) {
+        const entry = entriesPPoker[agent.id]
+        const valor = parseFloat(entry?.valor || '0') || 0
+        if (valor > 0) {
+          switch (entry?.modalidade || 'FICHAS') {
+            case 'FICHAS':
+              totalFichas += valor
+              break
+            case 'DINHEIRO':
+              totalDinheiro += valor
+              break
+            case 'DIVIDA':
+              totalDivida += valor
+              break
+          }
+        }
+      }
+    } else {
+      for (const agent of agentsSuprema) {
+        const rake = parseFloat(rakeValues[agent.id] || '0') || 0
+        const entry = entriesSuprema[agent.id]
+        if (rake > 0) {
+          const rakeback = calcularRakeback(agent, rake)
+          switch (entry?.modalidade || 'FICHAS') {
+            case 'FICHAS':
+              totalFichas += rakeback
+              break
+            case 'DINHEIRO':
+              totalDinheiro += rakeback
+              break
+            case 'DIVIDA':
+              totalDivida += rakeback
+              break
+          }
+        }
+      }
+    }
 
-  const totalPagar = tab === 'PPOKER' ? totalPagarPPoker : totalPagarSuprema
+    return { totalFichas, totalDinheiro, totalDivida, total: totalFichas + totalDinheiro + totalDivida }
+  }
+
+  const totais = calcularTotais()
 
   return (
     <div className="space-y-6">
@@ -163,23 +264,55 @@ export default function RakeSemanalPage() {
           <p className="text-gray-500">Pagamento de rakeback aos agentes</p>
         </div>
 
-        <div className="flex items-center gap-4">
-          <Button variant="outline" size="icon" onClick={handlePrevWeek}>
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
+        <div className="flex items-center gap-6">
+          {/* Navegação da semana */}
+          <div className="flex items-center gap-4">
+            <Button variant="outline" size="icon" onClick={handlePrevWeek}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
 
-          <div className="text-center min-w-[200px]">
-            <p className="font-medium">
-              {format(weekStart, 'dd/MM', { locale: ptBR })} - {format(weekEnd, 'dd/MM/yyyy', { locale: ptBR })}
-            </p>
-            <p className="text-sm text-gray-500">
-              Semana {weekNumber}/{currentWeek.getFullYear()}
-            </p>
+            <div className="text-center min-w-[200px]">
+              <p className="font-medium">
+                {format(weekStart, 'dd/MM', { locale: ptBR })} - {format(weekEnd, 'dd/MM/yyyy', { locale: ptBR })}
+              </p>
+              <p className="text-sm text-gray-500">
+                Semana {weekNumber}/{currentWeek.getFullYear()}
+              </p>
+            </div>
+
+            <Button variant="outline" size="icon" onClick={handleNextWeek}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
 
-          <Button variant="outline" size="icon" onClick={handleNextWeek}>
-            <ChevronRight className="h-4 w-4" />
-          </Button>
+          {/* Data de registro */}
+          <div className="flex items-center gap-2">
+            <Label className="text-sm text-gray-500 whitespace-nowrap">Registro em:</Label>
+            <Popover>
+              <PopoverTrigger
+                render={
+                  <Button
+                    variant="outline"
+                    className={cn(
+                      'w-[140px] justify-start text-left font-normal',
+                      !registrationDate && 'text-muted-foreground'
+                    )}
+                  />
+                }
+              >
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {format(registrationDate, 'dd/MM/yyyy')}
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="end">
+                <Calendar
+                  mode="single"
+                  selected={registrationDate}
+                  onSelect={(date) => date && setRegistrationDate(date)}
+                  locale={ptBR}
+                />
+              </PopoverContent>
+            </Popover>
+          </div>
         </div>
       </div>
 
@@ -193,8 +326,8 @@ export default function RakeSemanalPage() {
         <TabsContent value="PPOKER" className="mt-4">
           <RakeTablePPoker
             agents={agentsPPoker}
-            valorPagar={valorPagar}
-            updateValorPagar={updateValorPagar}
+            entries={entriesPPoker}
+            updateEntry={updateEntryPPoker}
             loading={loading}
           />
         </TabsContent>
@@ -202,23 +335,53 @@ export default function RakeSemanalPage() {
         <TabsContent value="SUPREMA" className="mt-4">
           <RakeTableSuprema
             agents={agentsSuprema}
+            entries={entriesSuprema}
             rakeValues={rakeValues}
+            updateEntry={updateEntrySuprema}
             updateRakeValue={updateRakeValue}
             loading={loading}
           />
         </TabsContent>
       </Tabs>
 
-      {/* Total e botão salvar */}
+      {/* Resumo e botão salvar */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-500">Total a Pagar</p>
-              <p className="text-xl font-bold text-green-600">{formatChips(totalPagar)}</p>
+            <div className="flex gap-8">
+              {totais.totalFichas > 0 && (
+                <div className="flex items-center gap-2">
+                  <Coins className="h-5 w-5 text-green-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Fichas</p>
+                    <p className="font-bold text-green-600">{formatChips(totais.totalFichas)}</p>
+                  </div>
+                </div>
+              )}
+              {totais.totalDinheiro > 0 && (
+                <div className="flex items-center gap-2">
+                  <Banknote className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Dinheiro</p>
+                    <p className="font-bold text-blue-600">{formatCurrency(totais.totalDinheiro)}</p>
+                  </div>
+                </div>
+              )}
+              {totais.totalDivida > 0 && (
+                <div className="flex items-center gap-2">
+                  <CreditCard className="h-5 w-5 text-purple-600" />
+                  <div>
+                    <p className="text-xs text-gray-500">Abate Dívida</p>
+                    <p className="font-bold text-purple-600">{formatCurrency(totais.totalDivida)}</p>
+                  </div>
+                </div>
+              )}
+              {totais.total === 0 && (
+                <p className="text-gray-500">Nenhum valor preenchido</p>
+              )}
             </div>
 
-            <Button onClick={handleSalvarTudo} disabled={saving} size="lg">
+            <Button onClick={handleSalvarTudo} disabled={saving || totais.total === 0} size="lg">
               {saving ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -238,16 +401,53 @@ export default function RakeSemanalPage() {
   )
 }
 
-// Tabela PPPoker - valor direto
+// Componente de seleção de modalidade
+function ModalitySelect({
+  value,
+  onChange,
+}: {
+  value: PaymentModality
+  onChange: (value: PaymentModality) => void
+}) {
+  return (
+    <Select value={value} onValueChange={(v) => onChange(v as PaymentModality)}>
+      <SelectTrigger className="w-[130px]">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        <SelectItem value="FICHAS">
+          <div className="flex items-center gap-2">
+            <Coins className="h-4 w-4 text-green-600" />
+            <span>Fichas</span>
+          </div>
+        </SelectItem>
+        <SelectItem value="DINHEIRO">
+          <div className="flex items-center gap-2">
+            <Banknote className="h-4 w-4 text-blue-600" />
+            <span>Dinheiro</span>
+          </div>
+        </SelectItem>
+        <SelectItem value="DIVIDA">
+          <div className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4 text-purple-600" />
+            <span>Dívida</span>
+          </div>
+        </SelectItem>
+      </SelectContent>
+    </Select>
+  )
+}
+
+// Tabela PPPoker - valor direto com modalidade
 function RakeTablePPoker({
   agents,
-  valorPagar,
-  updateValorPagar,
+  entries,
+  updateEntry,
   loading,
 }: {
   agents: Agent[]
-  valorPagar: Record<string, string>
-  updateValorPagar: (id: string, value: string) => void
+  entries: Record<string, AgentEntry>
+  updateEntry: (id: string, field: 'valor' | 'modalidade', value: string) => void
   loading: boolean
 }) {
   if (loading) {
@@ -281,31 +481,41 @@ function RakeTablePPoker({
           <TableHeader>
             <TableRow>
               <TableHead>Agente</TableHead>
-              <TableHead className="text-right">Valor a Pagar (fichas)</TableHead>
+              <TableHead className="text-right">Valor</TableHead>
+              <TableHead>Modalidade</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {agents.map((agent) => (
-              <TableRow key={agent.id}>
-                <TableCell>
-                  <div>
-                    <span className="font-medium">{agent.player.nick}</span>
-                    <span className="text-gray-500 text-sm ml-2">{agent.player.name}</span>
-                  </div>
-                </TableCell>
-                <TableCell className="w-48">
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={valorPagar[agent.id] || ''}
-                    onChange={(e) => updateValorPagar(agent.id, e.target.value)}
-                    placeholder="0,00"
-                    className="text-right"
-                  />
-                </TableCell>
-              </TableRow>
-            ))}
+            {agents.map((agent) => {
+              const entry = entries[agent.id] || { valor: '', modalidade: 'FICHAS' as PaymentModality }
+              return (
+                <TableRow key={agent.id}>
+                  <TableCell>
+                    <div>
+                      <span className="font-medium">{agent.player.nick}</span>
+                      <span className="text-gray-500 text-sm ml-2">{agent.player.name}</span>
+                    </div>
+                  </TableCell>
+                  <TableCell className="w-40">
+                    <Input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={entry.valor}
+                      onChange={(e) => updateEntry(agent.id, 'valor', e.target.value)}
+                      placeholder="0,00"
+                      className="text-right"
+                    />
+                  </TableCell>
+                  <TableCell className="w-40">
+                    <ModalitySelect
+                      value={entry.modalidade}
+                      onChange={(v) => updateEntry(agent.id, 'modalidade', v)}
+                    />
+                  </TableCell>
+                </TableRow>
+              )
+            })}
           </TableBody>
         </Table>
       </CardContent>
@@ -313,15 +523,19 @@ function RakeTablePPoker({
   )
 }
 
-// Tabela Suprema - com cálculo de porcentagens
+// Tabela Suprema - com cálculo de porcentagens e modalidade
 function RakeTableSuprema({
   agents,
+  entries,
   rakeValues,
+  updateEntry,
   updateRakeValue,
   loading,
 }: {
   agents: Agent[]
+  entries: Record<string, AgentEntry>
   rakeValues: Record<string, string>
+  updateEntry: (id: string, field: 'valor' | 'modalidade', value: string) => void
   updateRakeValue: (id: string, value: string) => void
   loading: boolean
 }) {
@@ -359,16 +573,14 @@ function RakeTableSuprema({
               <TableHead className="text-center">%</TableHead>
               <TableHead className="text-right">Rake Total</TableHead>
               <TableHead className="text-right">Rakeback</TableHead>
-              <TableHead className="text-right">LPBR</TableHead>
-              <TableHead className="text-right">Suprema</TableHead>
+              <TableHead>Modalidade</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {agents.map((agent) => {
               const rake = parseFloat(rakeValues[agent.id] || '0') || 0
               const rakeback = rake * (agent.pct_rakeback / 100)
-              const lpbr = rake * (agent.pct_lpbr / 100)
-              const suprema = rake * ((agent.pct_suprema || 0) / 100)
+              const entry = entries[agent.id] || { valor: '', modalidade: 'FICHAS' as PaymentModality }
 
               return (
                 <TableRow key={agent.id}>
@@ -392,14 +604,14 @@ function RakeTableSuprema({
                       className="text-right"
                     />
                   </TableCell>
-                  <TableCell className="text-right font-mono text-green-600 font-medium">
+                  <TableCell className="text-right font-mono text-green-600 font-medium w-28">
                     {rake > 0 ? formatChips(rakeback) : '—'}
                   </TableCell>
-                  <TableCell className="text-right font-mono text-blue-600">
-                    {rake > 0 ? formatChips(lpbr) : '—'}
-                  </TableCell>
-                  <TableCell className="text-right font-mono text-purple-600">
-                    {rake > 0 ? formatChips(suprema) : '—'}
+                  <TableCell className="w-40">
+                    <ModalitySelect
+                      value={entry.modalidade}
+                      onChange={(v) => updateEntry(agent.id, 'modalidade', v)}
+                    />
                   </TableCell>
                 </TableRow>
               )

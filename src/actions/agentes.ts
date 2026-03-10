@@ -272,14 +272,18 @@ export async function removerJogadorPasta(agentId: string, playerId: string) {
 }
 
 // Rake Semanal
+type PaymentModality = 'FICHAS' | 'DINHEIRO' | 'DIVIDA'
+
 interface RakeSemanalEntry {
   agentId: string
-  valorPagar: number
+  valor: number
+  modalidade: PaymentModality
 }
 
 export async function salvarRakeSemanal(data: {
   weekStart: string
   weekEnd: string
+  registrationDate: string
   platform: 'PPOKER' | 'SUPREMA'
   entries: RakeSemanalEntry[]
 }) {
@@ -292,7 +296,7 @@ export async function salvarRakeSemanal(data: {
 
   try {
     for (const entry of data.entries) {
-      if (entry.valorPagar <= 0) continue
+      if (entry.valor <= 0) continue
 
       // Buscar dados do agente
       const { data: agent } = await supabase
@@ -303,24 +307,70 @@ export async function salvarRakeSemanal(data: {
 
       if (!agent) continue
 
-      // Criar transação de rake do agente (valor direto, sem cálculo)
+      const notesBase = `Rakeback semana ${data.weekStart} a ${data.weekEnd} (${data.platform})`
+
+      // Criar transação baseada na modalidade
+      let transactionData: Record<string, unknown>
+
+      switch (entry.modalidade) {
+        case 'FICHAS':
+          // Pagamento em fichas - vai pro LOG
+          transactionData = {
+            date: data.registrationDate,
+            operation_type: 'RAKE_AGENTE',
+            type: 'LOG',
+            chips: entry.valor,
+            value: null,
+            player_id: agent.player_id,
+            bank_id: null,
+            reconciled: false,
+            notes: `${notesBase} - Fichas`,
+            created_by: user.id,
+          }
+          break
+
+        case 'DINHEIRO':
+          // Pagamento em dinheiro - FINANCIAL, banco definido depois na conciliação
+          transactionData = {
+            date: data.registrationDate,
+            operation_type: 'CASHBACK_DINHEIRO',
+            type: 'FINANCIAL',
+            chips: null,
+            value: entry.valor,
+            player_id: agent.player_id,
+            bank_id: null, // Gestor define na conciliação
+            reconciled: false,
+            notes: `${notesBase} - Dinheiro`,
+            created_by: user.id,
+          }
+          break
+
+        case 'DIVIDA':
+          // Abatimento de dívida - CONTROL
+          transactionData = {
+            date: data.registrationDate,
+            operation_type: 'CASHBACK_PAGAMENTO_DIVIDA',
+            type: 'CONTROL',
+            chips: null,
+            value: entry.valor,
+            player_id: agent.player_id,
+            bank_id: null,
+            reconciled: false,
+            notes: `${notesBase} - Abate Dívida`,
+            created_by: user.id,
+          }
+          break
+      }
+
       const { error } = await supabase
         .from('transactions')
-        .insert({
-          date: data.weekEnd,
-          operation_type: 'RAKE_AGENTE',
-          type: 'LOG',
-          chips: entry.valorPagar,
-          player_id: agent.player_id,
-          reconciled: false,
-          notes: `Rakeback semana ${data.weekStart} a ${data.weekEnd} (${data.platform})`,
-          created_by: user.id,
-        })
+        .insert(transactionData)
 
       if (error) throw error
     }
 
     revalidatePath('/rake-semanal')
+    revalidatePath('/operacional/conciliacao')
     return { success: true }
   } catch (error) {
     console.error('Erro ao salvar rake semanal:', error)
