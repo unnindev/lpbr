@@ -48,6 +48,7 @@ interface Agent {
     id: string
     nick: string
     name: string
+    club_id: string
   }
 }
 
@@ -493,7 +494,7 @@ function RakeTablePPoker({
                   <TableCell>
                     <div>
                       <span className="font-medium">{agent.player.nick}</span>
-                      <span className="text-gray-500 text-sm ml-2">{agent.player.name}</span>
+                      <span className="text-gray-500 text-sm ml-2">{agent.player.name} ({agent.player.club_id})</span>
                     </div>
                   </TableCell>
                   <TableCell className="w-40">
@@ -587,7 +588,7 @@ function RakeTableSuprema({
                   <TableCell>
                     <div>
                       <span className="font-medium">{agent.player.nick}</span>
-                      <span className="text-gray-500 text-sm ml-2">{agent.player.name}</span>
+                      <span className="text-gray-500 text-sm ml-2">{agent.player.name} ({agent.player.club_id})</span>
                     </div>
                   </TableCell>
                   <TableCell className="text-center text-xs text-gray-500">
