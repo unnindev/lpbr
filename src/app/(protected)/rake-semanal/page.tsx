@@ -97,10 +97,11 @@ export default function RakeSemanalPage() {
     loadData()
   }, [loadData])
 
-  // Atualizar data de registro quando mudar a semana
+  // Atualizar data de registro quando mudar a semana (usando currentWeek como dependência estável)
   useEffect(() => {
-    setRegistrationDate(addDays(weekEnd, 1))
-  }, [weekEnd])
+    const newWeekEnd = endOfWeek(currentWeek, { weekStartsOn: 1 })
+    setRegistrationDate(addDays(newWeekEnd, 1))
+  }, [currentWeek])
 
   const handlePrevWeek = () => {
     setCurrentWeek(subWeeks(currentWeek, 1))
