@@ -326,7 +326,7 @@ export async function getJogadoresComCredito() {
       operation_type,
       player:players(id, nick, name)
     `)
-    .in('operation_type', ['CREDITO_FICHAS', 'CREDITO_PAGAMENTO_DINHEIRO', 'CREDITO_PAGAMENTO_FICHAS'])
+    .in('operation_type', ['CREDITO_FICHAS', 'CREDITO_PAGAMENTO_DINHEIRO', 'CREDITO_PAGAMENTO_FICHAS', 'CASHBACK_PAGAMENTO_DIVIDA'])
 
   // Agrupar por jogador e calcular dívida
   const dividas = new Map<string, { player: { id: string; nick: string; name: string }; divida: number }>()
@@ -389,7 +389,7 @@ export async function getHistoricoCreditoJogador(playerId: string): Promise<Tran
       notes
     `)
     .eq('player_id', playerId)
-    .in('operation_type', ['CREDITO_FICHAS', 'CREDITO_PAGAMENTO_DINHEIRO', 'CREDITO_PAGAMENTO_FICHAS'])
+    .in('operation_type', ['CREDITO_FICHAS', 'CREDITO_PAGAMENTO_DINHEIRO', 'CREDITO_PAGAMENTO_FICHAS', 'CASHBACK_PAGAMENTO_DIVIDA'])
     .order('date', { ascending: false })
 
   if (error) {

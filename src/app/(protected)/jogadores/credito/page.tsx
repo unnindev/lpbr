@@ -46,6 +46,7 @@ const OPERATION_LABELS: Record<string, string> = {
   'CREDITO_FICHAS': 'Crédito Concedido',
   'CREDITO_PAGAMENTO_FICHAS': 'Pagamento (Fichas)',
   'CREDITO_PAGAMENTO_DINHEIRO': 'Pagamento (Dinheiro)',
+  'CASHBACK_PAGAMENTO_DIVIDA': 'Abatimento (Rakeback)',
 }
 
 export default function CreditoPage() {
