@@ -6,8 +6,8 @@ export const CHIPPIX_FEE = 0.5
 /**
  * Calcula o valor em reais de uma transação via ChipPix
  *
- * Regra de ouro do ChipPix:
- * - Depósito (jogador compra fichas): jogador recebe X fichas, mas conta ChipPix recebe (X - 0,50)
+ * Regra do ChipPix:
+ * - Depósito (jogador compra fichas): sem taxa, fichas = reais
  * - Saque (jogador saca fichas): jogador entrega X fichas, mas conta ChipPix paga (X + 0,50)
  *
  * @param chips - Valor em fichas informado pelo operador
@@ -19,8 +19,8 @@ export function calcularValorChippix(
   direcao: 'deposito' | 'saque'
 ): number {
   if (direcao === 'deposito') {
-    // Clube recebe menos (jogador pagou X, mas ChipPix retém a taxa)
-    return chips - CHIPPIX_FEE
+    // Depósito: sem taxa (ChipPix não cobra na entrada)
+    return chips
   } else {
     // Clube paga mais (jogador pediu X, mas ChipPix cobra a taxa do clube)
     return chips + CHIPPIX_FEE
@@ -39,7 +39,8 @@ export function calcularFichasChippix(
   direcao: 'deposito' | 'saque'
 ): number {
   if (direcao === 'deposito') {
-    return value + CHIPPIX_FEE
+    // Depósito: sem taxa
+    return value
   } else {
     return value - CHIPPIX_FEE
   }
