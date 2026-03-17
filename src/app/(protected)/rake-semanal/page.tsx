@@ -58,10 +58,11 @@ interface AgentEntry {
 }
 
 export default function RakeSemanalPage() {
-  const [currentWeek, setCurrentWeek] = useState(new Date())
+  const [currentWeek, setCurrentWeek] = useState(() => subWeeks(new Date(), 1))
   const [registrationDate, setRegistrationDate] = useState<Date>(() => {
-    // Por padrão, dia seguinte ao fim da semana
-    return addDays(endOfWeek(new Date(), { weekStartsOn: 1 }), 1)
+    // Por padrão, dia seguinte ao fim da semana anterior
+    const lastWeek = subWeeks(new Date(), 1)
+    return addDays(endOfWeek(lastWeek, { weekStartsOn: 1 }), 1)
   })
   const [agentsPPoker, setAgentsPPoker] = useState<Agent[]>([])
   const [agentsSuprema, setAgentsSuprema] = useState<Agent[]>([])
