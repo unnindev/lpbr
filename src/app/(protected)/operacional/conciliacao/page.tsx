@@ -394,6 +394,61 @@ export default function ConciliacaoPage() {
     setSaving(false)
   }
 
+  // Transações ChipPix pendentes (para o botão de conciliar todos)
+  const chippixPendentes = useMemo(() => {
+    return transactions.filter(
+      (tx) => tx.origem === 'CHIPPIX' && !tx.reconciled && tx.player?.id && tx.chips
+    )
+  }, [transactions])
+
+  // Conciliar todas as transações ChipPix pendentes de uma vez
+  const handleConciliarTodosChippix = async () => {
+    if (chippixPendentes.length === 0) {
+      toast.info('Não há transações ChipPix pendentes para conciliar')
+      return
+    }
+
+    if (!chippixBankId) {
+      toast.error('Banco CHIPPIX não encontrado. Configure um banco com "ChipPix" no nome.')
+      return
+    }
+
+    setSaving(true)
+    let successCount = 0
+    let errorCount = 0
+
+    for (const tx of chippixPendentes) {
+      const isEnvio = tx.notes?.includes('[ENVIO]')
+      const opType: OperationType = isEnvio ? 'COMPRA_FICHAS' : 'SAQUE_FICHAS'
+
+      const result = await conciliarTransacao(tx.id, {
+        operationType: opType,
+        playerId: tx.player!.id,
+        bankId: chippixBankId,
+        chips: tx.chips!,
+        value: tx.value || tx.chips!,
+        hasReceipt: false,
+        notes: tx.notes || undefined,
+      })
+
+      if (result.success) {
+        successCount++
+      } else {
+        errorCount++
+      }
+    }
+
+    setSaving(false)
+
+    if (errorCount === 0) {
+      toast.success(`${successCount} transações ChipPix conciliadas com sucesso!`)
+    } else {
+      toast.warning(`${successCount} conciliadas, ${errorCount} com erro`)
+    }
+
+    loadData()
+  }
+
   // Conciliação rápida para CHIPPIX (um clique)
   const handleConciliacaoRapida = async (tx: TransactionEntry) => {
     if (!tx.player?.id || !tx.chips) {
@@ -555,6 +610,22 @@ export default function ConciliacaoPage() {
                   <TabsTrigger value="verificados">Verificados</TabsTrigger>
                 </TabsList>
               </Tabs>
+
+              {chippixPendentes.length > 0 && (
+                <Button
+                  variant="outline"
+                  onClick={handleConciliarTodosChippix}
+                  disabled={saving}
+                  className="bg-green-50 text-green-700 border-green-300 hover:bg-green-100 hover:text-green-800"
+                >
+                  {saving ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  )}
+                  Conciliar ChipPix ({chippixPendentes.length})
+                </Button>
+              )}
 
               <Button onClick={() => setDialogOpen(true)}>
                 <Plus className="h-4 w-4 mr-2" />
