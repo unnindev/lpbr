@@ -31,6 +31,7 @@ import {
   History,
   Settings,
   LogOut,
+  BarChart3,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -84,6 +85,7 @@ const menuGroups = [
       { title: 'Custos', href: '/financeiro/custos', icon: PiggyBank, roles: ['CODE', 'ADMIN'] },
       { title: 'Resultado', href: '/financeiro/resultado', icon: Wallet, roles: ['CODE', 'ADMIN'] },
       { title: 'Bancos', href: '/financeiro/bancos', icon: Building2, roles: ['CODE', 'ADMIN'] },
+      { title: 'Relatórios', href: '/financeiro/relatorios', icon: BarChart3, roles: ['CODE', 'ADMIN'] },
     ],
   },
   {
