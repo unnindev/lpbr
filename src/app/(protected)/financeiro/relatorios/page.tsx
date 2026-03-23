@@ -106,7 +106,7 @@ export default function RelatoriosPage() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Select value={mes.toString()} onValueChange={(v) => setMes(parseInt(v))}>
+          <Select value={mes.toString()} onValueChange={(v) => v && setMes(parseInt(v))}>
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
@@ -119,7 +119,7 @@ export default function RelatoriosPage() {
             </SelectContent>
           </Select>
 
-          <Select value={ano.toString()} onValueChange={(v) => setAno(parseInt(v))}>
+          <Select value={ano.toString()} onValueChange={(v) => v && setAno(parseInt(v))}>
             <SelectTrigger className="w-24">
               <SelectValue />
             </SelectTrigger>
