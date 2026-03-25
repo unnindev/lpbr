@@ -132,15 +132,15 @@ export default async function DashboardPage() {
       title: 'Total em Fichas',
       value: formatChips(saldoGeral.fichas_circulacao),
       icon: Coins,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      color: 'text-emerald-600',
+      bgColor: 'bg-emerald-50',
     },
     {
       title: 'Caixa',
       value: formatCurrency(saldoGeral.total_bancos),
       icon: Landmark,
-      color: 'text-green-600',
-      bgColor: 'bg-green-50',
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-50',
     },
     {
       title: 'Jogadores Cadastrados',
@@ -231,20 +231,32 @@ export default async function DashboardPage() {
           Saldos por Banco
         </h2>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-          {bankBalances.map((bank: { bank_id: string; bank_name: string; saldo: number }) => (
-            <Card key={bank.bank_id} className="hover:shadow-md transition-shadow">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-gray-500 truncate">
-                  {bank.bank_name}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className={`text-xl lg:text-2xl font-bold tracking-tight ${bank.saldo >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {formatCurrency(bank.saldo)}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+          {bankBalances.map((bank: { bank_id: string; bank_name: string; saldo: number }) => {
+            // Definir cores por banco
+            const bankName = bank.bank_name.toLowerCase()
+            let bgColor = 'bg-gray-600'
+            if (bankName.includes('bradesco')) bgColor = 'bg-red-600'
+            else if (bankName.includes('chippix') || bankName.includes('chip pix')) bgColor = 'bg-purple-600'
+            else if (bankName.includes('cora')) bgColor = 'bg-pink-500'
+            else if (bankName.includes('investimento')) bgColor = 'bg-gray-900'
+            else if (bankName.includes('itau') || bankName.includes('itaú')) bgColor = 'bg-orange-500'
+            else if (bankName.includes('santander')) bgColor = 'bg-red-400'
+
+            return (
+              <Card key={bank.bank_id} className={`hover:shadow-md transition-shadow ${bgColor}`}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm font-medium text-white/80 truncate">
+                    {bank.bank_name}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="pt-0">
+                  <div className="text-xl lg:text-2xl font-bold tracking-tight text-white">
+                    {formatCurrency(bank.saldo)}
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       </section>
 
