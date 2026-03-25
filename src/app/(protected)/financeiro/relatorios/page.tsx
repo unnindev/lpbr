@@ -9,8 +9,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Progress } from '@/components/ui/progress'
-import { getEstatisticasPorOrigem, getEstatisticasAcumuladas } from '@/actions/relatorios'
+import { getEstatisticasSegmentadas, getEstatisticasAcumuladasSegmentadas } from '@/actions/relatorios'
 import { formatChips } from '@/lib/formatters'
 import {
   BarChart3,
@@ -20,35 +19,36 @@ import {
   ArrowUpCircle,
   ArrowDownCircle,
   TrendingUp,
+  Trophy,
+  Wallet,
 } from 'lucide-react'
 
-interface EstatisticasOrigem {
-  chippix: {
-    quantidade: number
-    fichasEnviadas: number
-    fichasRecebidas: number
-    totalFichas: number
-  }
-  manual: {
-    quantidade: number
-    fichasEnviadas: number
-    fichasRecebidas: number
-    totalFichas: number
-  }
-  percentualChippix: number
-  percentualManual: number
+interface CategoriaEstatisticas {
+  quantidade: number
+  fichasEnviadas: number
+  fichasRecebidas: number
+  totalFichas: number
 }
 
-interface EstatisticasAcumuladas {
-  chippix: {
-    quantidade: number
-    totalFichas: number
-  }
-  manual: {
-    quantidade: number
-    totalFichas: number
-  }
-  percentualChippix: number
+interface EstatisticasSegmentadas {
+  chippix: CategoriaEstatisticas
+  manual: CategoriaEstatisticas
+  ranking: CategoriaEstatisticas
+  rakeSemanal: CategoriaEstatisticas
+  total: number
+}
+
+interface CategoriaAcumulada {
+  quantidade: number
+  totalFichas: number
+}
+
+interface EstatisticasAcumuladasSegmentadas {
+  chippix: CategoriaAcumulada
+  manual: CategoriaAcumulada
+  ranking: CategoriaAcumulada
+  rakeSemanal: CategoriaAcumulada
+  total: number
 }
 
 const MESES = [
@@ -66,20 +66,67 @@ const MESES = [
   { value: 12, label: 'Dezembro' },
 ]
 
+const categorias = [
+  {
+    key: 'chippix' as const,
+    title: 'ChipPix',
+    icon: Smartphone,
+    bgColor: 'bg-blue-50',
+    borderColor: 'border-blue-100',
+    iconBg: 'bg-blue-100',
+    iconColor: 'text-blue-600',
+    titleColor: 'text-blue-900',
+    subtitleColor: 'text-blue-600',
+  },
+  {
+    key: 'manual' as const,
+    title: 'Manual',
+    icon: HandCoins,
+    bgColor: 'bg-amber-50',
+    borderColor: 'border-amber-100',
+    iconBg: 'bg-amber-100',
+    iconColor: 'text-amber-600',
+    titleColor: 'text-amber-900',
+    subtitleColor: 'text-amber-600',
+  },
+  {
+    key: 'ranking' as const,
+    title: 'Calculadora Ranking',
+    icon: Trophy,
+    bgColor: 'bg-orange-50',
+    borderColor: 'border-orange-100',
+    iconBg: 'bg-orange-100',
+    iconColor: 'text-orange-600',
+    titleColor: 'text-orange-900',
+    subtitleColor: 'text-orange-600',
+  },
+  {
+    key: 'rakeSemanal' as const,
+    title: 'Rake Semanal',
+    icon: Wallet,
+    bgColor: 'bg-purple-50',
+    borderColor: 'border-purple-100',
+    iconBg: 'bg-purple-100',
+    iconColor: 'text-purple-600',
+    titleColor: 'text-purple-900',
+    subtitleColor: 'text-purple-600',
+  },
+]
+
 export default function RelatoriosPage() {
   const hoje = new Date()
   const [ano, setAno] = useState(hoje.getFullYear())
   const [mes, setMes] = useState(hoje.getMonth() + 1)
-  const [estatisticas, setEstatisticas] = useState<EstatisticasOrigem | null>(null)
-  const [acumulado, setAcumulado] = useState<EstatisticasAcumuladas | null>(null)
+  const [estatisticas, setEstatisticas] = useState<EstatisticasSegmentadas | null>(null)
+  const [acumulado, setAcumulado] = useState<EstatisticasAcumuladasSegmentadas | null>(null)
   const [loading, setLoading] = useState(true)
 
   const loadData = useCallback(async () => {
     setLoading(true)
 
     const [mensal, total] = await Promise.all([
-      getEstatisticasPorOrigem(ano, mes),
-      getEstatisticasAcumuladas(),
+      getEstatisticasSegmentadas(ano, mes),
+      getEstatisticasAcumuladasSegmentadas(),
     ])
 
     setEstatisticas(mensal)
@@ -93,16 +140,13 @@ export default function RelatoriosPage() {
 
   const anos = Array.from({ length: ano - 2023 + 2 }, (_, i) => 2024 + i)
 
-  const totalTransacoesMes = (estatisticas?.chippix.quantidade || 0) + (estatisticas?.manual.quantidade || 0)
-  const totalTransacoesAcum = (acumulado?.chippix.quantidade || 0) + (acumulado?.manual.quantidade || 0)
-
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 tracking-tight">Relatórios</h1>
-          <p className="text-gray-500 mt-1">Estatísticas de transações por origem</p>
+          <p className="text-gray-500 mt-1">Estatísticas de transações por categoria</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -148,119 +192,71 @@ export default function RelatoriosPage() {
                 Transações de {MESES.find((m) => m.value === mes)?.label} de {ano}
               </CardTitle>
               <CardDescription>
-                Comparativo entre transações via ChipPix e Manual
+                Comparativo entre categorias de transações
               </CardDescription>
             </CardHeader>
             <CardContent>
-              {totalTransacoesMes === 0 ? (
+              {(estatisticas?.total || 0) === 0 ? (
                 <div className="text-center py-8 text-gray-500">
                   <BarChart3 className="h-12 w-12 mx-auto mb-3 opacity-30" />
                   <p className="text-lg font-medium">Nenhuma transação no período</p>
                   <p className="text-sm text-gray-400 mt-1">Selecione outro mês para visualizar</p>
                 </div>
               ) : (
-                <div className="space-y-6">
-                  {/* Barra de progresso */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <Smartphone className="h-4 w-4 text-blue-600" />
-                        ChipPix: {estatisticas?.percentualChippix.toFixed(1)}%
-                      </span>
-                      <span className="flex items-center gap-2">
-                        Manual: {estatisticas?.percentualManual.toFixed(1)}%
-                        <HandCoins className="h-4 w-4 text-amber-600" />
-                      </span>
-                    </div>
-                    <Progress value={estatisticas?.percentualChippix || 0} className="h-3" />
-                  </div>
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  {categorias.map((cat) => {
+                    const data = estatisticas?.[cat.key]
+                    const Icon = cat.icon
+                    const percentual = estatisticas?.total
+                      ? ((data?.quantidade || 0) / estatisticas.total * 100).toFixed(1)
+                      : '0'
 
-                  {/* Grid de comparação */}
-                  <div className="grid grid-cols-2 gap-6">
-                    {/* ChipPix */}
-                    <div className="space-y-4 p-4 bg-blue-50 rounded-lg border border-blue-100">
-                      <div className="flex items-center gap-2">
-                        <div className="p-2 bg-blue-100 rounded-lg">
-                          <Smartphone className="h-5 w-5 text-blue-600" />
+                    return (
+                      <div
+                        key={cat.key}
+                        className={`space-y-4 p-4 ${cat.bgColor} rounded-lg border ${cat.borderColor}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <div className={`p-2 ${cat.iconBg} rounded-lg`}>
+                            <Icon className={`h-5 w-5 ${cat.iconColor}`} />
+                          </div>
+                          <div>
+                            <h3 className={`font-semibold ${cat.titleColor}`}>{cat.title}</h3>
+                            <p className={`text-sm ${cat.subtitleColor}`}>
+                              {data?.quantidade || 0} transações ({percentual}%)
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <h3 className="font-semibold text-blue-900">ChipPix</h3>
-                          <p className="text-sm text-blue-600">
-                            {estatisticas?.chippix.quantidade} transações
-                          </p>
+
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span className="flex items-center gap-1 text-green-600">
+                              <ArrowUpCircle className="h-4 w-4" />
+                              Enviadas:
+                            </span>
+                            <span className="font-mono font-medium">
+                              {formatChips(data?.fichasEnviadas || 0)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between text-sm">
+                            <span className="flex items-center gap-1 text-red-600">
+                              <ArrowDownCircle className="h-4 w-4" />
+                              Recebidas:
+                            </span>
+                            <span className="font-mono font-medium">
+                              {formatChips(data?.fichasRecebidas || 0)}
+                            </span>
+                          </div>
+                          <div className={`flex justify-between text-sm pt-2 border-t ${cat.borderColor}`}>
+                            <span className={`font-medium ${cat.titleColor}`}>Total:</span>
+                            <span className={`font-mono font-bold ${cat.iconColor}`}>
+                              {formatChips(data?.totalFichas || 0)}
+                            </span>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="flex items-center gap-1 text-green-600">
-                            <ArrowUpCircle className="h-4 w-4" />
-                            Enviadas:
-                          </span>
-                          <span className="font-mono font-medium">
-                            {formatChips(estatisticas?.chippix.fichasEnviadas || 0)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="flex items-center gap-1 text-red-600">
-                            <ArrowDownCircle className="h-4 w-4" />
-                            Recebidas:
-                          </span>
-                          <span className="font-mono font-medium">
-                            {formatChips(estatisticas?.chippix.fichasRecebidas || 0)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm pt-2 border-t border-blue-200">
-                          <span className="font-medium text-blue-900">Total Fichas:</span>
-                          <span className="font-mono font-bold text-blue-600">
-                            {formatChips(estatisticas?.chippix.totalFichas || 0)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Manual */}
-                    <div className="space-y-4 p-4 bg-amber-50 rounded-lg border border-amber-100">
-                      <div className="flex items-center gap-2">
-                        <div className="p-2 bg-amber-100 rounded-lg">
-                          <HandCoins className="h-5 w-5 text-amber-600" />
-                        </div>
-                        <div>
-                          <h3 className="font-semibold text-amber-900">Manual</h3>
-                          <p className="text-sm text-amber-600">
-                            {estatisticas?.manual.quantidade} transações
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="flex items-center gap-1 text-green-600">
-                            <ArrowUpCircle className="h-4 w-4" />
-                            Enviadas:
-                          </span>
-                          <span className="font-mono font-medium">
-                            {formatChips(estatisticas?.manual.fichasEnviadas || 0)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="flex items-center gap-1 text-red-600">
-                            <ArrowDownCircle className="h-4 w-4" />
-                            Recebidas:
-                          </span>
-                          <span className="font-mono font-medium">
-                            {formatChips(estatisticas?.manual.fichasRecebidas || 0)}
-                          </span>
-                        </div>
-                        <div className="flex justify-between text-sm pt-2 border-t border-amber-200">
-                          <span className="font-medium text-amber-900">Total Fichas:</span>
-                          <span className="font-mono font-bold text-amber-600">
-                            {formatChips(estatisticas?.manual.totalFichas || 0)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                    )
+                  })}
                 </div>
               )}
             </CardContent>
@@ -278,34 +274,31 @@ export default function RelatoriosPage() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                 {/* Total Transações */}
                 <div className="text-center p-4 bg-gray-50 rounded-lg">
-                  <p className="text-3xl font-bold text-gray-900">{totalTransacoesAcum}</p>
+                  <p className="text-3xl font-bold text-gray-900">{acumulado?.total || 0}</p>
                   <p className="text-sm text-gray-500 mt-1">Total de Transações</p>
                 </div>
 
-                {/* ChipPix */}
-                <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <p className="text-3xl font-bold text-blue-600">{acumulado?.chippix.quantidade || 0}</p>
-                  <p className="text-sm text-blue-600 mt-1">
-                    Via ChipPix ({acumulado?.percentualChippix.toFixed(1)}%)
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2 font-mono">
-                    {formatChips(acumulado?.chippix.totalFichas || 0)} fichas
-                  </p>
-                </div>
+                {categorias.map((cat) => {
+                  const data = acumulado?.[cat.key]
+                  const percentual = acumulado?.total
+                    ? ((data?.quantidade || 0) / acumulado.total * 100).toFixed(1)
+                    : '0'
 
-                {/* Manual */}
-                <div className="text-center p-4 bg-amber-50 rounded-lg">
-                  <p className="text-3xl font-bold text-amber-600">{acumulado?.manual.quantidade || 0}</p>
-                  <p className="text-sm text-amber-600 mt-1">
-                    Manual ({(100 - (acumulado?.percentualChippix || 0)).toFixed(1)}%)
-                  </p>
-                  <p className="text-xs text-gray-500 mt-2 font-mono">
-                    {formatChips(acumulado?.manual.totalFichas || 0)} fichas
-                  </p>
-                </div>
+                  return (
+                    <div key={cat.key} className={`text-center p-4 ${cat.bgColor} rounded-lg`}>
+                      <p className={`text-3xl font-bold ${cat.iconColor}`}>{data?.quantidade || 0}</p>
+                      <p className={`text-sm ${cat.subtitleColor} mt-1`}>
+                        {cat.title} ({percentual}%)
+                      </p>
+                      <p className="text-xs text-gray-500 mt-2 font-mono">
+                        {formatChips(data?.totalFichas || 0)} fichas
+                      </p>
+                    </div>
+                  )
+                })}
               </div>
             </CardContent>
           </Card>
