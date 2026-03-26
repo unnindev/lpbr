@@ -67,10 +67,10 @@ async function getDashboardData() {
     .lt('date', endOfMonth)
 
   // Calcular cada tipo separadamente
+  // RAKE_AGENTE é tratado como CASHBACK_FICHAS (legado)
   let cashbackDinheiro = 0
   let cashbackFichas = 0
   let cashbackPagamentoDivida = 0
-  let rakeAgente = 0
 
   for (const t of cashbackData || []) {
     switch (t.operation_type) {
@@ -78,19 +78,17 @@ async function getDashboardData() {
         cashbackDinheiro += t.value || 0
         break
       case 'CASHBACK_FICHAS':
+      case 'RAKE_AGENTE': // Legado: tratar como fichas
         cashbackFichas += t.chips || 0
         break
       case 'CASHBACK_PAGAMENTO_DIVIDA':
         cashbackPagamentoDivida += t.chips || 0
         break
-      case 'RAKE_AGENTE':
-        rakeAgente += t.chips || 0
-        break
     }
   }
 
   // Total: fichas + dinheiro (tratando como mesma unidade)
-  const cashbackTotal = cashbackDinheiro + cashbackFichas + cashbackPagamentoDivida + rakeAgente
+  const cashbackTotal = cashbackDinheiro + cashbackFichas + cashbackPagamentoDivida
 
   return {
     saldoGeral: saldoGeral || {
@@ -108,7 +106,6 @@ async function getDashboardData() {
       dinheiro: cashbackDinheiro,
       fichas: cashbackFichas,
       pagamentoDivida: cashbackPagamentoDivida,
-      rakeAgente: rakeAgente,
       total: cashbackTotal,
     },
   }
@@ -315,12 +312,6 @@ export default async function DashboardPage() {
                   <div className="flex justify-between text-gray-500">
                     <span>Pag. Dívida:</span>
                     <span className="font-mono">{formatChips(cashback.pagamentoDivida)}</span>
-                  </div>
-                )}
-                {cashback.rakeAgente > 0 && (
-                  <div className="flex justify-between text-gray-500">
-                    <span>Rake Agente:</span>
-                    <span className="font-mono">{formatChips(cashback.rakeAgente)}</span>
                   </div>
                 )}
               </div>
