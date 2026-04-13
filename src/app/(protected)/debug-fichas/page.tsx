@@ -40,7 +40,7 @@ export default async function DebugFichasPage() {
     .select('operation_type')
     .not('operation_type', 'is', null)
 
-  const allTypes = [...new Set((distinctTypes || []).map((t: { operation_type: string }) => t.operation_type))]
+  const allTypes: string[] = [...new Set((distinctTypes || []).map((t: { operation_type: string }) => t.operation_type))]
 
   for (const tipo of allTypes) {
     const { data: txsDoTipo, count } = await supabase
@@ -49,7 +49,7 @@ export default async function DebugFichasPage() {
       .eq('operation_type', tipo)
 
     const total = (txsDoTipo || []).reduce((acc: number, t: { chips: number }) => acc + (t.chips || 0), 0)
-    porTipo[tipo] = { total, count: count || (txsDoTipo || []).length }
+    porTipo[tipo as string] = { total, count: count || (txsDoTipo || []).length }
   }
 
   // Transações com operation_type NULL (pendentes de conciliação)
