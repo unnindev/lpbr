@@ -40,7 +40,7 @@ export default async function DebugFichasPage() {
     .select('operation_type')
     .not('operation_type', 'is', null)
 
-  const allTypes: string[] = [...new Set((distinctTypes || []).map((t: { operation_type: string }) => t.operation_type))]
+  const allTypes = [...new Set((distinctTypes || []).map((t: { operation_type: string }) => t.operation_type))] as string[]
 
   for (const tipo of allTypes) {
     const { data: txsDoTipo, count } = await supabase
