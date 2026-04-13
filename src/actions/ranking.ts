@@ -150,6 +150,7 @@ export async function confirmarColetas(data: { date: string; coletas: ColetaItem
 
     revalidatePath('/ranking')
     revalidatePath('/ranking/calculadora')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao confirmar coletas:', error)
@@ -179,6 +180,7 @@ export async function excluirTransacaoRanking(transactionId: string) {
 
     revalidatePath('/ranking')
     revalidatePath('/ranking/calculadora')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao excluir transação:', error)
@@ -262,6 +264,7 @@ export async function confirmarPagamentos(data: { date: string; pagamentos: Paga
 
     revalidatePath('/ranking')
     revalidatePath('/ranking/calculadora')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao confirmar pagamentos:', error)

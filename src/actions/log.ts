@@ -69,6 +69,7 @@ export async function criarLog(data: NovoLogData) {
     })
 
     revalidatePath('/operacional/log')
+    revalidatePath('/dashboard')
 
     return { success: true, data: tx }
   } catch (error) {
@@ -158,6 +159,7 @@ export async function excluirLog(id: string) {
     })
 
     revalidatePath('/operacional/log')
+    revalidatePath('/dashboard')
 
     return { success: true }
   } catch (error) {

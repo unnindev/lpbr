@@ -229,6 +229,7 @@ export async function criarTransacao(data: NovaTransacaoData) {
     if (error) throw error
 
     revalidatePath('/operacional/conciliacao')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao criar transação:', error)
@@ -279,6 +280,7 @@ export async function conciliarTransacao(
     if (error) throw error
 
     revalidatePath('/operacional/conciliacao')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao conciliar transação:', error)
@@ -341,6 +343,7 @@ export async function excluirTransacao(id: string) {
 
     revalidatePath('/operacional/conciliacao')
     revalidatePath('/ranking')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao excluir transação:', error)

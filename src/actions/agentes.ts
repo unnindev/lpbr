@@ -371,6 +371,7 @@ export async function salvarRakeSemanal(data: {
 
     revalidatePath('/rake-semanal')
     revalidatePath('/operacional/conciliacao')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao salvar rake semanal:', error)

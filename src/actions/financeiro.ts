@@ -98,6 +98,7 @@ export async function criarCusto(data: NovoCustoData) {
     if (error) throw error
 
     revalidatePath('/financeiro/custos')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao criar custo:', error)
@@ -126,6 +127,7 @@ export async function excluirCusto(id: string) {
     if (error) throw error
 
     revalidatePath('/financeiro/custos')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao excluir custo:', error)

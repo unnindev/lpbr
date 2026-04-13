@@ -112,6 +112,7 @@ export async function criarRake(data: NovoRakeData) {
     })
 
     revalidatePath('/operacional/rake')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao criar rake:', error)
@@ -142,6 +143,7 @@ export async function editarRake(id: string, data: { chips: number; notes?: stri
     if (error) throw error
 
     revalidatePath('/operacional/rake')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao editar rake:', error)
@@ -170,6 +172,7 @@ export async function excluirRake(id: string) {
     if (error) throw error
 
     revalidatePath('/operacional/rake')
+    revalidatePath('/dashboard')
     return { success: true }
   } catch (error) {
     console.error('Erro ao excluir rake:', error)
