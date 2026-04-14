@@ -91,7 +91,7 @@ const menuGroups = [
   {
     label: 'DESENVOLVEDOR',
     items: [
-      { title: 'Histórico', href: '/historico', icon: History, roles: ['CODE', 'ADMIN'] },
+      { title: 'Histórico', href: '/historico', icon: History, roles: ['CODE'] },
       { title: 'Usuários', href: '/usuarios', icon: Settings, roles: ['CODE'] },
       { title: 'Ajuste Inicial', href: '/ajuste-inicial', icon: Settings, roles: ['CODE'] },
     ],
