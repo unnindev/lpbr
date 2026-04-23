@@ -118,7 +118,7 @@ export async function confirmarColetas(data: { date: string; coletas: ColetaItem
       const chips = coleta.premio * (coleta.percentual / 100)
 
       // Criar transação de coleta
-      const { error: txError } = await supabase
+      const { data: tx, error: txError } = await supabase
         .from('transactions')
         .insert({
           date: data.date,
@@ -130,22 +130,19 @@ export async function confirmarColetas(data: { date: string; coletas: ColetaItem
           notes: `Coleta ranking: ${coleta.percentual}% de ${coleta.premio} fichas`,
           created_by: user.id,
         })
+        .select()
+        .single()
 
       if (txError) throw txError
 
-      // Criar ranking_transaction
-      const { error: rtError } = await supabase
-        .from('ranking_transactions')
-        .insert({
-          date: data.date,
-          type: 'COLETA',
-          chips,
-          player_id: coleta.playerId,
-          total_prize: coleta.premio,
-          pct_collected: coleta.percentual,
-        })
-
-      if (rtError) throw rtError
+      // Registrar no audit_log
+      await supabase.from('audit_log').insert({
+        user_id: user.id,
+        action: `Coleta ranking: ${chips} fichas (${coleta.percentual}% de ${coleta.premio})`,
+        table_name: 'transactions',
+        record_id: tx.id,
+        new_value: tx,
+      })
     }
 
     revalidatePath('/ranking')
@@ -209,7 +206,7 @@ export async function confirmarPagamentos(data: { date: string; pagamentos: Paga
   try {
     for (const pag of data.pagamentos) {
       if (pag.modalidade === 'FICHAS') {
-        const { error } = await supabase
+        const { data: tx, error } = await supabase
           .from('transactions')
           .insert({
             date: data.date,
@@ -221,14 +218,24 @@ export async function confirmarPagamentos(data: { date: string; pagamentos: Paga
             notes: 'Pagamento ranking em fichas',
             created_by: user.id,
           })
+          .select()
+          .single()
 
         if (error) throw error
+
+        await supabase.from('audit_log').insert({
+          user_id: user.id,
+          action: `Pagamento ranking em fichas: ${pag.valor} fichas`,
+          table_name: 'transactions',
+          record_id: tx.id,
+          new_value: tx,
+        })
       } else if (pag.modalidade === 'DINHEIRO') {
         if (!pag.bankId) {
           return { success: false, error: 'Banco é obrigatório para pagamento em dinheiro' }
         }
 
-        const { error } = await supabase
+        const { data: tx, error } = await supabase
           .from('transactions')
           .insert({
             date: data.date,
@@ -241,11 +248,21 @@ export async function confirmarPagamentos(data: { date: string; pagamentos: Paga
             notes: 'Pagamento ranking em dinheiro',
             created_by: user.id,
           })
+          .select()
+          .single()
 
         if (error) throw error
+
+        await supabase.from('audit_log').insert({
+          user_id: user.id,
+          action: `Pagamento ranking em dinheiro: R$ ${pag.valor}`,
+          table_name: 'transactions',
+          record_id: tx.id,
+          new_value: tx,
+        })
       } else if (pag.modalidade === 'ABATE_DIVIDA') {
         // Abater dívida do jogador
-        const { error } = await supabase
+        const { data: tx, error } = await supabase
           .from('transactions')
           .insert({
             date: data.date,
@@ -257,8 +274,18 @@ export async function confirmarPagamentos(data: { date: string; pagamentos: Paga
             notes: 'Abate de dívida via ranking',
             created_by: user.id,
           })
+          .select()
+          .single()
 
         if (error) throw error
+
+        await supabase.from('audit_log').insert({
+          user_id: user.id,
+          action: `Abate de dívida via ranking: R$ ${pag.valor}`,
+          table_name: 'transactions',
+          record_id: tx.id,
+          new_value: tx,
+        })
       }
     }
 

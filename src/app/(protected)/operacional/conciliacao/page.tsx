@@ -112,9 +112,7 @@ const OPERATION_TYPES: OperationType[] = [
   'SAQUE_AVULSO',
   'ACORDO_COLETA',
   'ACORDO_PAGAMENTO',
-  'RANKING_COLETA',
-  'RANKING_PAGAMENTO_FICHAS',
-  'RANKING_PAGAMENTO_DINHEIRO',
+  // RANKING_* removido - coletas e pagamentos de ranking devem ser feitos pela Calculadora de Ranking
   'CASHBACK_DINHEIRO',
   'CASHBACK_FICHAS',
   'CASHBACK_PAGAMENTO_DIVIDA',
