@@ -161,3 +161,32 @@
     background-color: oklch(0.7 0 0);
   }
 }
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+
+  .print-area,
+  .print-area * {
+    visibility: visible;
+  }
+
+  .print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 20px;
+    color: #000;
+    background: #fff;
+  }
+
+  .no-print {
+    display: none !important;
+  }
+
+  .print-page-break {
+    page-break-after: always;
+  }
+}
