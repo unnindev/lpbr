@@ -87,12 +87,11 @@ export async function salvarAjusteInicial(data: AjusteInicialData) {
 
     // 3. Criar transação para saldo de ranking inicial (se > 0)
     if (data.saldoRanking > 0) {
-      // Criar como AJUSTE_INICIAL para não afetar fichas em circulação
       const { error: rankingError } = await supabase
         .from('transactions')
         .insert({
           date: dataAjuste,
-          operation_type: 'AJUSTE_INICIAL',
+          operation_type: 'AJUSTE_RANKING',
           type: 'CONTROL',
           chips: data.saldoRanking,
           reconciled: true,
@@ -145,11 +144,11 @@ interface AjusteInicialExistente {
 export async function getAjusteInicialExistente(): Promise<AjusteInicialExistente> {
   const supabase = await createClient() as SupabaseClient
 
-  // Buscar transações de AJUSTE_INICIAL
+  // Buscar transações de AJUSTE_INICIAL e AJUSTE_RANKING
   const { data: ajustes } = await supabase
     .from('transactions')
     .select('id, chips, notes, date')
-    .eq('operation_type', 'AJUSTE_INICIAL')
+    .in('operation_type', ['AJUSTE_INICIAL', 'AJUSTE_RANKING'])
     .is('bank_id', null) // Apenas fichas e ranking, não bancos
 
   let fichasCirculacao = 0
@@ -281,7 +280,7 @@ export async function atualizarAjusteInicial(data: AjusteInicialData) {
     const { data: existingRanking } = await supabase
       .from('transactions')
       .select('id')
-      .eq('operation_type', 'AJUSTE_INICIAL')
+      .in('operation_type', ['AJUSTE_RANKING', 'AJUSTE_INICIAL'])
       .is('bank_id', null)
       .ilike('notes', '%Saldo de ranking%')
       .single()
@@ -291,6 +290,7 @@ export async function atualizarAjusteInicial(data: AjusteInicialData) {
         .from('transactions')
         .update({
           date: dataAjuste,
+          operation_type: 'AJUSTE_RANKING',
           chips: data.saldoRanking,
         })
         .eq('id', existingRanking.id)
@@ -301,7 +301,7 @@ export async function atualizarAjusteInicial(data: AjusteInicialData) {
         .from('transactions')
         .insert({
           date: dataAjuste,
-          operation_type: 'AJUSTE_INICIAL',
+          operation_type: 'AJUSTE_RANKING',
           type: 'CONTROL',
           chips: data.saldoRanking,
           reconciled: true,
