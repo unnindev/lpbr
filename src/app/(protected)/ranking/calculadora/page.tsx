@@ -21,11 +21,12 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PlayerSelector } from '@/components/shared/player-selector'
 import { BankSelector } from '@/components/shared/bank-selector'
 import { confirmarColetas, confirmarPagamentos } from '@/actions/ranking'
-import { formatChips, formatCurrency } from '@/lib/formatters'
-import { Calculator, Plus, Trash2, Loader2, Trophy, CheckCircle } from 'lucide-react'
+import { formatChips } from '@/lib/formatters'
+import { Calculator, Plus, Trash2, Loader2, Trophy, CheckCircle, ArrowDownCircle, ArrowUpCircle } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface ColetaLine {
@@ -52,6 +53,7 @@ export default function CalculadoraPage() {
   const [bankId, setBankId] = useState('')
   const [savingColetas, setSavingColetas] = useState(false)
   const [savingPagamentos, setSavingPagamentos] = useState(false)
+  const [tab, setTab] = useState<'coleta' | 'pagamento'>('coleta')
 
   // Adicionar linha de coleta
   const addColetaLine = () => {
@@ -194,6 +196,20 @@ export default function CalculadoraPage() {
         </div>
       </div>
 
+      {/* Tabs Coleta / Pagamento */}
+      <Tabs value={tab} onValueChange={(v) => setTab(v as 'coleta' | 'pagamento')}>
+        <TabsList>
+          <TabsTrigger value="coleta">
+            <ArrowDownCircle className="h-4 w-4 text-orange-600" />
+            Coleta
+          </TabsTrigger>
+          <TabsTrigger value="pagamento">
+            <ArrowUpCircle className="h-4 w-4 text-green-600" />
+            Pagamento
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="coleta" className="mt-4">
       {/* Seção Coleta */}
       <Card>
         <CardHeader>
@@ -310,6 +326,9 @@ export default function CalculadoraPage() {
         </CardContent>
       </Card>
 
+        </TabsContent>
+
+        <TabsContent value="pagamento" className="mt-4">
       {/* Seção Pagamento */}
       <Card>
         <CardHeader>
@@ -438,6 +457,8 @@ export default function CalculadoraPage() {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

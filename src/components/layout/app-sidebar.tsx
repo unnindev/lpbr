@@ -60,7 +60,7 @@ const menuGroups = [
   {
     label: 'RANKING',
     items: [
-      { title: 'Painel Ranking', href: '/ranking', icon: Trophy, roles: ['CODE', 'ADMIN', 'USER'] },
+      { title: 'Controle Ranking', href: '/ranking', icon: Trophy, roles: ['CODE', 'ADMIN', 'USER'] },
       { title: 'Calculadora', href: '/ranking/calculadora', icon: Calculator, roles: ['CODE', 'ADMIN', 'USER'] },
     ],
   },

@@ -148,8 +148,8 @@ export default function RankingPage() {
       {/* Header (oculto no print) */}
       <div className="flex items-center justify-between no-print">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Painel Ranking</h1>
-          <p className="text-gray-500">Controle do pool de ranking</p>
+          <h1 className="text-2xl font-bold text-gray-900">Controle Ranking</h1>
+          <p className="text-gray-500">Histórico e controle das transações de ranking</p>
         </div>
 
         <div className="flex items-center gap-2">
