@@ -389,6 +389,70 @@ export async function salvarClassificacao(etapaId: string, linhas: Classificacao
 // VERSÕES (helper para selectors)
 // ============================================
 
+export interface RankingGeralLinha {
+  player_id: string
+  player_nick: string
+  player_name: string
+  total_pontos: number
+  etapas_disputadas: number
+  premiacoes: number
+  melhor_posicao: number | null
+}
+
+export async function getRankingGeral(mesReferencia: string): Promise<RankingGeralLinha[]> {
+  const auth = await getAuthed()
+  if (!auth.ok) return []
+
+  // Buscar todas etapas do mês
+  const { data: etapas } = await auth.supabase
+    .from('ranking_etapas')
+    .select('id')
+    .eq('mes_referencia', mesReferencia)
+
+  if (!etapas || etapas.length === 0) return []
+  const etapaIds = etapas.map((e: { id: string }) => e.id)
+
+  const { data: classifs } = await auth.supabase
+    .from('ranking_classificacoes')
+    .select(`
+      player_id, posicao, pontos_snapshot, foi_premiado,
+      player:players(id, nick, name)
+    `)
+    .in('etapa_id', etapaIds)
+
+  if (!classifs) return []
+
+  const mapa = new Map<string, RankingGeralLinha>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const c of classifs as any[]) {
+    const id = c.player_id as string
+    if (!mapa.has(id)) {
+      mapa.set(id, {
+        player_id: id,
+        player_nick: c.player?.nick || '',
+        player_name: c.player?.name || '',
+        total_pontos: 0,
+        etapas_disputadas: 0,
+        premiacoes: 0,
+        melhor_posicao: null,
+      })
+    }
+    const linha = mapa.get(id)!
+    linha.total_pontos += parseFloat(c.pontos_snapshot) || 0
+    linha.etapas_disputadas++
+    if (c.foi_premiado) linha.premiacoes++
+    if (linha.melhor_posicao === null || c.posicao < linha.melhor_posicao) {
+      linha.melhor_posicao = c.posicao
+    }
+  }
+
+  return Array.from(mapa.values()).sort((a, b) => {
+    if (b.total_pontos !== a.total_pontos) return b.total_pontos - a.total_pontos
+    if ((a.melhor_posicao ?? 999) !== (b.melhor_posicao ?? 999)) return (a.melhor_posicao ?? 999) - (b.melhor_posicao ?? 999)
+    return a.player_nick.localeCompare(b.player_nick)
+  })
+}
+
 export async function listarVersoesPontosResumo(): Promise<Array<{ id: string; label: string; ativa: boolean }>> {
   const auth = await getAuthed()
   if (!auth.ok) return []

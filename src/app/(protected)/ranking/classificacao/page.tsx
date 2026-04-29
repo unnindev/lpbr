@@ -32,8 +32,9 @@ import {
   DialogFooter,
   DialogDescription,
 } from '@/components/ui/dialog'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
-import { Loader2, Plus, Trash2, Trophy, Edit } from 'lucide-react'
+import { Loader2, Plus, Trash2, Trophy, Edit, Medal } from 'lucide-react'
 import {
   listarEtapas,
   listarMesesReferencia,
@@ -41,7 +42,9 @@ import {
   excluirEtapa,
   listarVersoesPontosResumo,
   getDefaultColetaPercentual,
+  getRankingGeral,
   type EtapaResumo,
+  type RankingGeralLinha,
 } from '@/actions/ranking-classificacao'
 
 export default function ClassificacaoPage() {
@@ -103,78 +106,172 @@ export default function ClassificacaoPage() {
         </div>
       </div>
 
+      <Tabs defaultValue="etapas">
+        <TabsList>
+          <TabsTrigger value="etapas">Etapas</TabsTrigger>
+          <TabsTrigger value="geral">Ranking Geral</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="etapas" className="mt-4">
+          <Card>
+            <CardHeader>
+              <CardTitle>Etapas</CardTitle>
+              <CardDescription>
+                {filtroMes === 'todos' ? 'Todas as etapas' : 'Etapas do mês selecionado'}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
+              ) : etapas.length === 0 ? (
+                <div className="text-center py-8 text-gray-500">
+                  <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p>Nenhuma etapa encontrada</p>
+                </div>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Etapa</TableHead>
+                      <TableHead>Data</TableHead>
+                      <TableHead>Mês ref.</TableHead>
+                      <TableHead>Versão pontos</TableHead>
+                      <TableHead className="text-right">% Coleta</TableHead>
+                      <TableHead className="text-right">Classificações</TableHead>
+                      <TableHead className="text-right">Coletas</TableHead>
+                      <TableHead className="w-32"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {etapas.map((e) => (
+                      <TableRow key={e.id}>
+                        <TableCell className="font-medium">{e.nome}</TableCell>
+                        <TableCell>{format(new Date(e.data_realizada + 'T12:00:00'), 'dd/MM/yyyy')}</TableCell>
+                        <TableCell>{format(new Date(e.mes_referencia + 'T12:00:00'), "MMM/yy", { locale: ptBR })}</TableCell>
+                        <TableCell>
+                          {e.pontos_versao_label ? (
+                            <Badge variant="outline">{e.pontos_versao_label}</Badge>
+                          ) : (
+                            <span className="text-gray-400 text-sm">—</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right font-mono">{e.percentual_coleta}%</TableCell>
+                        <TableCell className="text-right font-mono">{e.total_classificacoes}</TableCell>
+                        <TableCell className="text-right font-mono">{e.total_coletas}</TableCell>
+                        <TableCell>
+                          <div className="flex gap-1 justify-end">
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => router.push(`/ranking/classificacao/${e.id}`)}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => handleExcluir(e.id, e.nome)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="geral" className="mt-4">
+          <RankingGeralView mes={filtroMes === 'todos' ? '' : filtroMes} />
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}
+
+function RankingGeralView({ mes }: { mes: string }) {
+  const [linhas, setLinhas] = useState<RankingGeralLinha[]>([])
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!mes) {
+      setLinhas([])
+      return
+    }
+    setLoading(true)
+    getRankingGeral(mes).then(data => {
+      setLinhas(data)
+      setLoading(false)
+    })
+  }, [mes])
+
+  if (!mes) {
+    return (
       <Card>
-        <CardHeader>
-          <CardTitle>Etapas</CardTitle>
-          <CardDescription>
-            {filtroMes === 'todos' ? 'Todas as etapas' : 'Etapas do mês selecionado'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {loading ? (
-            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
-          ) : etapas.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
-              <Trophy className="h-8 w-8 mx-auto mb-2 opacity-50" />
-              <p>Nenhuma etapa encontrada</p>
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Etapa</TableHead>
-                  <TableHead>Data</TableHead>
-                  <TableHead>Mês ref.</TableHead>
-                  <TableHead>Versão pontos</TableHead>
-                  <TableHead className="text-right">% Coleta</TableHead>
-                  <TableHead className="text-right">Classificações</TableHead>
-                  <TableHead className="text-right">Coletas</TableHead>
-                  <TableHead className="w-32"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {etapas.map((e) => (
-                  <TableRow key={e.id}>
-                    <TableCell className="font-medium">{e.nome}</TableCell>
-                    <TableCell>{format(new Date(e.data_realizada + 'T12:00:00'), 'dd/MM/yyyy')}</TableCell>
-                    <TableCell>{format(new Date(e.mes_referencia + 'T12:00:00'), "MMM/yy", { locale: ptBR })}</TableCell>
-                    <TableCell>
-                      {e.pontos_versao_label ? (
-                        <Badge variant="outline">{e.pontos_versao_label}</Badge>
-                      ) : (
-                        <span className="text-gray-400 text-sm">—</span>
-                      )}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">{e.percentual_coleta}%</TableCell>
-                    <TableCell className="text-right font-mono">{e.total_classificacoes}</TableCell>
-                    <TableCell className="text-right font-mono">{e.total_coletas}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-1 justify-end">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => router.push(`/ranking/classificacao/${e.id}`)}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleExcluir(e.id, e.nome)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
+        <CardContent className="pt-6 text-center text-gray-500">
+          <Medal className="h-8 w-8 mx-auto mb-2 opacity-50" />
+          <p>Selecione um mês de referência acima para ver o ranking geral.</p>
         </CardContent>
       </Card>
-    </div>
+    )
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Ranking Geral — {format(new Date(mes + 'T12:00:00'), "MMMM 'de' yyyy", { locale: ptBR })}</CardTitle>
+        <CardDescription>
+          Soma de pontos por jogador em todas as etapas do mês selecionado.
+          Apenas o top 20 pontua em cada etapa, mas todos os participantes são listados.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        {loading ? (
+          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
+        ) : linhas.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Medal className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <p>Nenhum jogador classificado neste mês.</p>
+          </div>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-16">#</TableHead>
+                <TableHead>Jogador</TableHead>
+                <TableHead className="text-right">Pontos</TableHead>
+                <TableHead className="text-right">Etapas</TableHead>
+                <TableHead className="text-right">Premiações</TableHead>
+                <TableHead className="text-right">Melhor pos.</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {linhas.map((l, idx) => (
+                <TableRow key={l.player_id}>
+                  <TableCell className="font-bold">
+                    {l.total_pontos > 0 ? idx + 1 : '—'}
+                  </TableCell>
+                  <TableCell className="font-medium">{l.player_nick}</TableCell>
+                  <TableCell className="text-right font-mono font-bold">
+                    {l.total_pontos > 0 ? l.total_pontos.toFixed(2) : '0'}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">{l.etapas_disputadas}</TableCell>
+                  <TableCell className="text-right font-mono">
+                    {l.premiacoes > 0 ? l.premiacoes : '—'}
+                  </TableCell>
+                  <TableCell className="text-right font-mono">{l.melhor_posicao ?? '—'}º</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        )}
+      </CardContent>
+    </Card>
   )
 }
 
