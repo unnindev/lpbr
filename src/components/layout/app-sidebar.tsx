@@ -94,6 +94,7 @@ const menuGroups = [
       { title: 'Histórico', href: '/historico', icon: History, roles: ['CODE'] },
       { title: 'Usuários', href: '/usuarios', icon: Settings, roles: ['CODE'] },
       { title: 'Ajuste Inicial', href: '/ajuste-inicial', icon: Settings, roles: ['CODE'] },
+      { title: 'Config. Ranking', href: '/ranking-config', icon: Trophy, roles: ['CODE'] },
     ],
   },
 ]
