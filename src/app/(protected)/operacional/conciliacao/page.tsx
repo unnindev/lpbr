@@ -110,6 +110,7 @@ const OPERATION_TYPES: OperationType[] = [
   // CUSTO_DESPESA removido - custos devem ser cadastrados em Financeiro → Custos
   'DEPOSITO_AVULSO',
   'SAQUE_AVULSO',
+  'RAKE_SUPREMA',
   'ACORDO_COLETA',
   'ACORDO_PAGAMENTO',
   // RANKING_* removido - coletas e pagamentos de ranking devem ser feitos pela Calculadora de Ranking
@@ -147,6 +148,7 @@ const OPERACOES_DESPESA: OperationType[] = [
 const OPERACOES_RECEITA: OperationType[] = [
   'DEPOSITO_AVULSO',
   'CREDITO_PAGAMENTO_DINHEIRO',
+  'RAKE_SUPREMA',
 ]
 
 export default function ConciliacaoPage() {

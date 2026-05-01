@@ -160,6 +160,7 @@ export const CAMPOS_POR_TIPO: Record<OperationType, FieldsConfig> = {
   CASHBACK_PAGAMENTO_DIVIDA: { jogador: true, banco: false, fichas: false, valor: true, comprovante: false },
   RAKE: { jogador: false, banco: false, fichas: true, valor: false, comprovante: false },
   RAKE_AGENTE: { jogador: true, banco: false, fichas: true, valor: false, comprovante: false },
+  RAKE_SUPREMA: { jogador: false, banco: true, fichas: false, valor: true, comprovante: false },
   AJUSTE_INICIAL: { jogador: false, banco: true, fichas: true, valor: true, comprovante: false },
 }
 
@@ -185,5 +186,6 @@ export const OPERATION_TYPE_LABELS: Record<OperationType, string> = {
   CASHBACK_PAGAMENTO_DIVIDA: 'Cashback (Abate Dívida)',
   RAKE: 'Rake',
   RAKE_AGENTE: 'Rake Agente',
+  RAKE_SUPREMA: 'Rake Suprema',
   AJUSTE_INICIAL: 'Ajuste Inicial',
 }

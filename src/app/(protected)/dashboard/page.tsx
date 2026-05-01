@@ -62,6 +62,16 @@ async function getDashboardData() {
 
   const rakeMensal = (rakeData || []).reduce((acc: number, t: { chips: number }) => acc + (t.chips || 0), 0)
 
+  // Rake Suprema do mês (entradas de dinheiro vindas da Suprema)
+  const { data: rakeSupremaData } = await supabase
+    .from('transactions')
+    .select('value')
+    .eq('operation_type', 'RAKE_SUPREMA')
+    .gte('date', startOfMonth)
+    .lt('date', endOfMonth)
+
+  const rakeSupremaMensal = (rakeSupremaData || []).reduce((acc: number, t: { value: number }) => acc + (t.value || 0), 0)
+
   // Custos do mês
   const { data: custosData } = await supabase
     .from('transactions')
@@ -116,6 +126,7 @@ async function getDashboardData() {
     playersChippix,
     bankBalances: bankBalances || [],
     rakeMensal,
+    rakeSupremaMensal,
     custoMensal,
     cashback: {
       dinheiro: cashbackDinheiro,
@@ -133,6 +144,7 @@ export default async function DashboardPage() {
     playersChippix,
     bankBalances,
     rakeMensal,
+    rakeSupremaMensal,
     custoMensal,
     cashback,
   } = await getDashboardData()
@@ -196,6 +208,13 @@ export default async function DashboardPage() {
       icon: Percent,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
+    },
+    {
+      title: 'Rake Suprema',
+      value: formatCurrency(rakeSupremaMensal),
+      icon: Coins,
+      color: 'text-indigo-600',
+      bgColor: 'bg-indigo-50',
     },
     {
       title: 'Custo Mensal',
@@ -291,7 +310,7 @@ export default async function DashboardPage() {
         <h2 className="text-lg font-semibold text-gray-900 mb-4 capitalize">
           Dados de {mesAtual}
         </h2>
-        <div className="grid gap-5 md:grid-cols-3">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
           {monthlyCards.map((card) => (
             <Card key={card.title} className="hover:shadow-md transition-shadow">
               <CardHeader className="flex flex-row items-center justify-between pb-3">

@@ -98,7 +98,7 @@ export async function getResumo(dateStr: string): Promise<DaySummary> {
     .from('transactions')
     .select('value')
     .eq('date', dateStr)
-    .in('operation_type', ['COMPRA_FICHAS', 'CREDITO_PAGAMENTO_DINHEIRO', 'DEPOSITO_AVULSO'])
+    .in('operation_type', ['COMPRA_FICHAS', 'CREDITO_PAGAMENTO_DINHEIRO', 'DEPOSITO_AVULSO', 'RAKE_SUPREMA'])
     .gt('value', 0)
 
   // Saídas de caixa
@@ -176,6 +176,7 @@ function getTransactionType(operationType: OperationType): TransactionType {
     'CUSTO_DESPESA',
     'DEPOSITO_AVULSO',
     'SAQUE_AVULSO',
+    'RAKE_SUPREMA',
     'RANKING_PAGAMENTO_DINHEIRO',
     'CASHBACK_DINHEIRO',
   ]
@@ -220,6 +221,7 @@ export async function criarTransacao(data: NovaTransacaoData) {
         player_id: data.playerId || null,
         bank_id: data.bankId || null,
         origem: data.origem || null,
+        club: data.operationType === 'RAKE_SUPREMA' ? 'SUPREMA' : null,
         has_receipt: data.hasReceipt || false,
         reconciled: true,
         notes: data.notes || null,

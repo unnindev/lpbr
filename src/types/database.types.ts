@@ -377,6 +377,7 @@ export type OperationType =
   | 'CASHBACK_PAGAMENTO_DIVIDA'
   | 'RAKE'
   | 'RAKE_AGENTE'
+  | 'RAKE_SUPREMA'
   | 'AJUSTE_INICIAL'
 
 export type TransactionType = 'LOG' | 'FINANCIAL' | 'CONTROL'
