@@ -41,7 +41,6 @@ async function getDashboardData() {
       .filter((id: string | null): id is string => !!id)
   )
   const playersChippix = chippixPlayerIds.size
-  const playersSemChippix = Math.max(0, (playersCount || 0) - playersChippix)
 
   // Buscar saldos por banco
   const { data: bankBalances } = await supabase.rpc('get_all_bank_balances')
@@ -115,7 +114,6 @@ async function getDashboardData() {
     },
     playersCount: playersCount || 0,
     playersChippix,
-    playersSemChippix,
     bankBalances: bankBalances || [],
     rakeMensal,
     custoMensal,
@@ -133,7 +131,6 @@ export default async function DashboardPage() {
     saldoGeral,
     playersCount,
     playersChippix,
-    playersSemChippix,
     bankBalances,
     rakeMensal,
     custoMensal,
@@ -165,8 +162,7 @@ export default async function DashboardPage() {
       color: 'text-gray-600',
       bgColor: 'bg-gray-50',
       details: [
-        { label: 'Usam ChipPix', value: playersChippix.toString(), color: 'text-green-600' },
-        { label: 'Não usam', value: playersSemChippix.toString(), color: 'text-gray-500' },
+        { label: 'ChipPix', value: `${playersChippix}/${playersCount}`, color: 'text-green-600' },
       ],
     },
     {
