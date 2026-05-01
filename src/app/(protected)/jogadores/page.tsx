@@ -23,6 +23,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   listarJogadores,
   getJogadorComEstatisticas,
@@ -54,7 +55,10 @@ interface Player {
   name: string
   notes: string | null
   is_active: boolean
+  usaChippix: boolean
 }
+
+type ChippixFilter = 'todos' | 'usa' | 'nao_usa'
 
 interface PlayerStats {
   id: string
@@ -73,6 +77,7 @@ export default function JogadoresPage() {
   const [players, setPlayers] = useState<Player[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
+  const [chippixFilter, setChippixFilter] = useState<ChippixFilter>('todos')
   const [dialogOpen, setDialogOpen] = useState(false)
   const [detailsOpen, setDetailsOpen] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerStats | null>(null)
@@ -87,10 +92,10 @@ export default function JogadoresPage() {
 
   const loadData = useCallback(async () => {
     setLoading(true)
-    const data = await listarJogadores(search || undefined)
+    const data = await listarJogadores(search || undefined, chippixFilter)
     setPlayers(data)
     setLoading(false)
-  }, [search])
+  }, [search, chippixFilter])
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -221,15 +226,24 @@ export default function JogadoresPage() {
         </Button>
       </div>
 
-      {/* Busca */}
-      <div className="relative">
-        <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
-        <Input
-          placeholder="Buscar por código, nick ou nome..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="pl-12 h-12 text-base bg-white border-gray-200 shadow-sm"
-        />
+      {/* Busca + filtro ChipPix */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-400" />
+          <Input
+            placeholder="Buscar por código, nick ou nome..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="pl-12 h-12 text-base bg-white border-gray-200 shadow-sm"
+          />
+        </div>
+        <Tabs value={chippixFilter} onValueChange={(v) => v && setChippixFilter(v as ChippixFilter)}>
+          <TabsList className="h-12">
+            <TabsTrigger value="todos">Todos</TabsTrigger>
+            <TabsTrigger value="usa">ChipPix</TabsTrigger>
+            <TabsTrigger value="nao_usa">Sem ChipPix</TabsTrigger>
+          </TabsList>
+        </Tabs>
       </div>
 
       {/* Lista de jogadores */}
@@ -259,6 +273,7 @@ export default function JogadoresPage() {
                     <TableHead className="font-semibold">Código PPPoker</TableHead>
                     <TableHead className="font-semibold">Nick</TableHead>
                     <TableHead className="font-semibold">Nome</TableHead>
+                    <TableHead className="font-semibold w-20 text-center">ChipPix</TableHead>
                     <TableHead className="font-semibold">Observação</TableHead>
                     <TableHead className="font-semibold">Status</TableHead>
                     <TableHead className="w-16"></TableHead>
@@ -274,6 +289,13 @@ export default function JogadoresPage() {
                       <TableCell className="font-mono text-sm">{player.club_id}</TableCell>
                       <TableCell className="font-semibold">{player.nick}</TableCell>
                       <TableCell className="text-gray-600">{player.name}</TableCell>
+                      <TableCell className="text-center">
+                        {player.usaChippix ? (
+                          <CheckCircle2 className="h-4 w-4 text-green-600 inline" />
+                        ) : (
+                          <span className="text-gray-300">—</span>
+                        )}
+                      </TableCell>
                       <TableCell className="text-gray-400 text-sm truncate max-w-xs">
                         {player.notes || '—'}
                       </TableCell>

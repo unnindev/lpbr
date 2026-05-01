@@ -16,6 +16,12 @@ interface Player {
   is_active: boolean
 }
 
+interface PlayerListItem extends Player {
+  usaChippix: boolean
+}
+
+export type ChippixFilter = 'todos' | 'usa' | 'nao_usa'
+
 interface PlayerWithStats extends Player {
   totalComprado: number
   totalSacado: number
@@ -23,32 +29,46 @@ interface PlayerWithStats extends Player {
   usaChippix: boolean
 }
 
-export async function listarJogadores(search?: string) {
+export async function listarJogadores(search?: string, chippixFilter: ChippixFilter = 'todos'): Promise<PlayerListItem[]> {
   const supabase = await createClient() as SupabaseClient
 
-  const query = supabase
-    .from('players')
-    .select('id, club_id, nick, name, notes, is_active')
-    .order('nick')
-
-  const { data, error } = await query
+  const [{ data: playersData, error }, { data: chippixTx }] = await Promise.all([
+    supabase.from('players').select('id, club_id, nick, name, notes, is_active').order('nick'),
+    supabase.from('transactions').select('player_id').eq('origem', 'CHIPPIX').not('player_id', 'is', null),
+  ])
 
   if (error) {
     console.error('Erro ao listar jogadores:', error)
     return []
   }
 
-  // Filtrar client-side com normalização (remove acentos e case-insensitive)
+  const chippixSet = new Set<string>(
+    ((chippixTx || []) as Array<{ player_id: string | null }>)
+      .map(t => t.player_id)
+      .filter((id): id is string => !!id)
+  )
+
+  let result: PlayerListItem[] = (playersData as Player[]).map(p => ({
+    ...p,
+    usaChippix: chippixSet.has(p.id),
+  }))
+
+  if (chippixFilter === 'usa') {
+    result = result.filter(p => p.usaChippix)
+  } else if (chippixFilter === 'nao_usa') {
+    result = result.filter(p => !p.usaChippix)
+  }
+
   if (search) {
     const searchNormalized = normalizeString(search)
-    return (data as Player[]).filter(player =>
+    result = result.filter(player =>
       normalizeString(player.nick).includes(searchNormalized) ||
       normalizeString(player.name).includes(searchNormalized) ||
       normalizeString(player.club_id).includes(searchNormalized)
     )
   }
 
-  return data as Player[]
+  return result
 }
 
 export async function getJogadorComEstatisticas(playerId: string): Promise<PlayerWithStats | null> {
