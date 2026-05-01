@@ -20,6 +20,7 @@ interface PlayerWithStats extends Player {
   totalComprado: number
   totalSacado: number
   dividaCredito: number
+  usaChippix: boolean
 }
 
 export async function listarJogadores(search?: string) {
@@ -98,11 +99,19 @@ export async function getJogadorComEstatisticas(playerId: string): Promise<Playe
     }
   }
 
+  // Verifica se o jogador tem alguma transação via ChipPix
+  const { count: chippixCount } = await supabase
+    .from('transactions')
+    .select('*', { count: 'exact', head: true })
+    .eq('player_id', playerId)
+    .eq('origem', 'CHIPPIX')
+
   return {
     ...player,
     totalComprado,
     totalSacado,
     dividaCredito: Math.max(0, dividaCredito),
+    usaChippix: (chippixCount || 0) > 0,
   }
 }
 

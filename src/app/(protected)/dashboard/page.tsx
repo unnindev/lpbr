@@ -28,6 +28,21 @@ async function getDashboardData() {
     .select('*', { count: 'exact', head: true })
     .eq('is_active', true)
 
+  // Jogadores que já usaram ChipPix (distinct player_id em transactions com origem = CHIPPIX)
+  const { data: chippixTx } = await supabase
+    .from('transactions')
+    .select('player_id')
+    .eq('origem', 'CHIPPIX')
+    .not('player_id', 'is', null)
+
+  const chippixPlayerIds = new Set<string>(
+    (chippixTx || [])
+      .map((t: { player_id: string | null }) => t.player_id)
+      .filter((id: string | null): id is string => !!id)
+  )
+  const playersChippix = chippixPlayerIds.size
+  const playersSemChippix = Math.max(0, (playersCount || 0) - playersChippix)
+
   // Buscar saldos por banco
   const { data: bankBalances } = await supabase.rpc('get_all_bank_balances')
 
@@ -99,6 +114,8 @@ async function getDashboardData() {
       saldo_geral: 0,
     },
     playersCount: playersCount || 0,
+    playersChippix,
+    playersSemChippix,
     bankBalances: bankBalances || [],
     rakeMensal,
     custoMensal,
@@ -115,6 +132,8 @@ export default async function DashboardPage() {
   const {
     saldoGeral,
     playersCount,
+    playersChippix,
+    playersSemChippix,
     bankBalances,
     rakeMensal,
     custoMensal,
@@ -145,6 +164,10 @@ export default async function DashboardPage() {
       icon: Users,
       color: 'text-gray-600',
       bgColor: 'bg-gray-50',
+      details: [
+        { label: 'Usam ChipPix', value: playersChippix.toString(), color: 'text-green-600' },
+        { label: 'Não usam', value: playersSemChippix.toString(), color: 'text-gray-500' },
+      ],
     },
     {
       title: 'Fichas Ranking',
@@ -214,6 +237,16 @@ export default async function DashboardPage() {
                 </div>
                 {card.formula && (
                   <p className="text-xs text-gray-400 mt-2">{card.formula}</p>
+                )}
+                {card.details && card.details.length > 0 && (
+                  <div className="mt-3 space-y-1 text-sm">
+                    {card.details.map((d) => (
+                      <div key={d.label} className="flex justify-between text-gray-500">
+                        <span>{d.label}:</span>
+                        <span className={`font-mono ${d.color}`}>{d.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 )}
               </CardContent>
             </Card>

@@ -42,6 +42,8 @@ import {
   TrendingUp,
   TrendingDown,
   Trash2,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -64,6 +66,7 @@ interface PlayerStats {
   totalComprado: number
   totalSacado: number
   dividaCredito: number
+  usaChippix: boolean
 }
 
 export default function JogadoresPage() {
@@ -414,13 +417,26 @@ export default function JogadoresPage() {
                     {selectedPlayer.nick.charAt(0).toUpperCase()}
                   </span>
                 </div>
-                <div>
+                <div className="flex-1">
                   <h3 className="text-lg font-semibold">{selectedPlayer.nick}</h3>
                   <p className="text-sm text-gray-500">{selectedPlayer.name}</p>
                   <p className="text-xs text-gray-400 font-mono mt-0.5">
                     Código: {selectedPlayer.club_id}
                   </p>
                 </div>
+                <Badge
+                  variant="outline"
+                  className={selectedPlayer.usaChippix
+                    ? 'border-green-500 text-green-700 bg-green-50'
+                    : 'border-gray-300 text-gray-500 bg-white'}
+                >
+                  {selectedPlayer.usaChippix ? (
+                    <CheckCircle2 className="h-3.5 w-3.5 mr-1" />
+                  ) : (
+                    <XCircle className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  ChipPix
+                </Badge>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
