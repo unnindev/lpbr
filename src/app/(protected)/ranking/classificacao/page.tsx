@@ -354,7 +354,12 @@ function NovaEtapaDialog({ onCreated }: { onCreated: (id: string) => void }) {
             <Label>Versão da tabela de pontos</Label>
             <Select value={versaoId} onValueChange={(v) => v && setVersaoId(v)}>
               <SelectTrigger>
-                <SelectValue placeholder="Selecione" />
+                <SelectValue placeholder="Selecione">
+                  {(() => {
+                    const v = versoes.find(x => x.id === versaoId)
+                    return v ? `${v.label}${v.ativa ? ' (ativa)' : ''}` : null
+                  })()}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {versoes.map(v => (

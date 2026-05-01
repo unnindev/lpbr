@@ -196,7 +196,12 @@ function PontosSection() {
             {versoes.length > 0 && (
               <Select value={versaoId} onValueChange={(v) => v && setVersaoId(v)}>
                 <SelectTrigger className="w-64">
-                  <SelectValue placeholder="Selecione a versão" />
+                  <SelectValue placeholder="Selecione a versão">
+                    {(() => {
+                      const v = versoes.find(x => x.id === versaoId)
+                      return v ? `${v.label}${v.ativa ? ' (ativa)' : ''}` : null
+                    })()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {versoes.map(v => (
@@ -452,7 +457,12 @@ function PremiacaoSection() {
             {versoes.length > 0 && (
               <Select value={versaoId} onValueChange={(v) => v && setVersaoId(v)}>
                 <SelectTrigger className="w-64">
-                  <SelectValue placeholder="Selecione a versão" />
+                  <SelectValue placeholder="Selecione a versão">
+                    {(() => {
+                      const v = versoes.find(x => x.id === versaoId)
+                      return v ? `${v.label}${v.ativa ? ' (ativa)' : ''}` : null
+                    })()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {versoes.map(v => (

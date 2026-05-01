@@ -223,7 +223,12 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
               <Label>Versão de pontos</Label>
               <Select value={editVersao} onValueChange={(v) => v && setEditVersao(v)}>
                 <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
+                  <SelectValue placeholder="Selecione">
+                    {(() => {
+                      const v = versoes.find(x => x.id === editVersao)
+                      return v ? `${v.label}${v.ativa ? ' (ativa)' : ''}` : null
+                    })()}
+                  </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   {versoes.map(v => (
