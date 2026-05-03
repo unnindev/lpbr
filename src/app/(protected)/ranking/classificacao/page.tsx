@@ -165,7 +165,16 @@ export default function ClassificacaoPage() {
                             <Button
                               variant="ghost"
                               size="icon"
+                              onClick={() => router.push(`/ranking/classificacao/${e.id}?print=1`)}
+                              title="Imprimir / PDF da etapa"
+                            >
+                              <Printer className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
                               onClick={() => router.push(`/ranking/classificacao/${e.id}`)}
+                              title="Editar"
                             >
                               <Edit className="h-4 w-4" />
                             </Button>
@@ -174,6 +183,7 @@ export default function ClassificacaoPage() {
                               size="icon"
                               onClick={() => handleExcluir(e.id, e.nome)}
                               className="text-red-600"
+                              title="Excluir"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>

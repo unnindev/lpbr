@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback, use } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { format } from 'date-fns'
 import { ptBR } from 'date-fns/locale'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
@@ -51,6 +51,7 @@ interface Linha {
 export default function EtapaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
   const { id: etapaId } = use(params)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   const [etapa, setEtapa] = useState<EtapaDetalhe | null>(null)
   const [pontosMapa, setPontosMapa] = useState<Record<number, number>>({})
@@ -103,6 +104,15 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
   }, [etapaId, router])
 
   useEffect(() => { loadData() }, [loadData])
+
+  // Auto-impressão quando vem com ?print=1
+  useEffect(() => {
+    if (loading || !etapa || linhas.length === 0) return
+    if (searchParams.get('print') === '1') {
+      const t = setTimeout(() => window.print(), 500)
+      return () => clearTimeout(t)
+    }
+  }, [loading, etapa, linhas.length, searchParams])
 
   const addLinha = () => {
     const proxPos = linhas.length === 0 ? 1 : Math.max(...linhas.map(l => l.posicao)) + 1
