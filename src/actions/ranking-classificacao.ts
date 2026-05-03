@@ -389,6 +389,93 @@ export async function salvarClassificacao(etapaId: string, linhas: Classificacao
 // VERSÕES (helper para selectors)
 // ============================================
 
+export interface RankingMensalDetalhado {
+  mes_referencia: string
+  etapas: Array<{ id: string; nome: string; data_realizada: string; numero: number }>
+  jogadores: Array<{
+    player_id: string
+    player_nick: string
+    player_name: string
+    pontosPorEtapa: Record<string, number>
+    posicaoPorEtapa: Record<string, number>
+    total_pontos: number
+    melhor_posicao: number | null
+    premiacoes: number
+    etapas_disputadas: number
+  }>
+}
+
+export async function getRankingMensalDetalhado(mesReferencia: string): Promise<RankingMensalDetalhado | null> {
+  const auth = await getAuthed()
+  if (!auth.ok) return null
+
+  const { data: etapas } = await auth.supabase
+    .from('ranking_etapas')
+    .select('id, nome, data_realizada')
+    .eq('mes_referencia', mesReferencia)
+    .order('data_realizada')
+
+  if (!etapas || etapas.length === 0) {
+    return { mes_referencia: mesReferencia, etapas: [], jogadores: [] }
+  }
+
+  const etapasOrdered = etapas.map((e: { id: string; nome: string; data_realizada: string }, idx: number) => ({
+    id: e.id,
+    nome: e.nome,
+    data_realizada: e.data_realizada,
+    numero: idx + 1,
+  }))
+
+  const etapaIds = etapasOrdered.map((e: { id: string }) => e.id)
+
+  const { data: classifs } = await auth.supabase
+    .from('ranking_classificacoes')
+    .select(`
+      etapa_id, player_id, posicao, pontos_snapshot, foi_premiado,
+      player:players(id, nick, name)
+    `)
+    .in('etapa_id', etapaIds)
+
+  if (!classifs) return { mes_referencia: mesReferencia, etapas: etapasOrdered, jogadores: [] }
+
+  const mapa = new Map<string, RankingMensalDetalhado['jogadores'][number]>()
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  for (const c of classifs as any[]) {
+    const id = c.player_id as string
+    if (!mapa.has(id)) {
+      mapa.set(id, {
+        player_id: id,
+        player_nick: c.player?.nick || '',
+        player_name: c.player?.name || '',
+        pontosPorEtapa: {},
+        posicaoPorEtapa: {},
+        total_pontos: 0,
+        melhor_posicao: null,
+        premiacoes: 0,
+        etapas_disputadas: 0,
+      })
+    }
+    const j = mapa.get(id)!
+    const pontos = parseFloat(c.pontos_snapshot) || 0
+    j.pontosPorEtapa[c.etapa_id] = pontos
+    j.posicaoPorEtapa[c.etapa_id] = c.posicao
+    j.total_pontos += pontos
+    j.etapas_disputadas++
+    if (c.foi_premiado) j.premiacoes++
+    if (j.melhor_posicao === null || c.posicao < j.melhor_posicao) {
+      j.melhor_posicao = c.posicao
+    }
+  }
+
+  const jogadores = Array.from(mapa.values()).sort((a, b) => {
+    if (b.total_pontos !== a.total_pontos) return b.total_pontos - a.total_pontos
+    if ((a.melhor_posicao ?? 999) !== (b.melhor_posicao ?? 999)) return (a.melhor_posicao ?? 999) - (b.melhor_posicao ?? 999)
+    return a.player_nick.localeCompare(b.player_nick)
+  })
+
+  return { mes_referencia: mesReferencia, etapas: etapasOrdered, jogadores }
+}
+
 export interface RankingGeralLinha {
   player_id: string
   player_nick: string

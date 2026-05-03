@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/dialog'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { toast } from 'sonner'
-import { Loader2, Plus, Trash2, Trophy, Edit, Medal } from 'lucide-react'
+import { Loader2, Plus, Trash2, Trophy, Edit, Medal, Printer } from 'lucide-react'
 import {
   listarEtapas,
   listarMesesReferencia,
@@ -43,8 +43,10 @@ import {
   listarVersoesPontosResumo,
   getDefaultColetaPercentual,
   getRankingGeral,
+  getRankingMensalDetalhado,
   type EtapaResumo,
   type RankingGeralLinha,
+  type RankingMensalDetalhado,
 } from '@/actions/ranking-classificacao'
 
 export default function ClassificacaoPage() {
@@ -196,16 +198,19 @@ export default function ClassificacaoPage() {
 
 function RankingGeralView({ mes }: { mes: string }) {
   const [linhas, setLinhas] = useState<RankingGeralLinha[]>([])
+  const [detalhado, setDetalhado] = useState<RankingMensalDetalhado | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!mes) {
       setLinhas([])
+      setDetalhado(null)
       return
     }
     setLoading(true)
-    getRankingGeral(mes).then(data => {
+    Promise.all([getRankingGeral(mes), getRankingMensalDetalhado(mes)]).then(([data, det]) => {
       setLinhas(data)
+      setDetalhado(det)
       setLoading(false)
     })
   }, [mes])
@@ -221,57 +226,127 @@ function RankingGeralView({ mes }: { mes: string }) {
     )
   }
 
+  const handlePrint = () => {
+    window.print()
+  }
+
+  const mesLabel = format(new Date(mes + 'T12:00:00'), "MMMM 'de' yyyy", { locale: ptBR })
+  const mesShort = format(new Date(mes + 'T12:00:00'), "MMM/yyyy", { locale: ptBR }).toUpperCase()
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Ranking Geral — {format(new Date(mes + 'T12:00:00'), "MMMM 'de' yyyy", { locale: ptBR })}</CardTitle>
-        <CardDescription>
-          Soma de pontos por jogador em todas as etapas do mês selecionado.
-          Apenas o top 20 pontua em cada etapa, mas todos os participantes são listados.
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {loading ? (
-          <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
-        ) : linhas.length === 0 ? (
-          <div className="text-center py-8 text-gray-500">
-            <Medal className="h-8 w-8 mx-auto mb-2 opacity-50" />
-            <p>Nenhum jogador classificado neste mês.</p>
+    <>
+      <Card className="no-print">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Ranking Geral — {mesLabel}</CardTitle>
+              <CardDescription>
+                Soma de pontos por jogador em todas as etapas do mês selecionado.
+                Apenas o top 20 pontua em cada etapa, mas todos os participantes são listados.
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handlePrint}
+              disabled={loading || !detalhado || detalhado.etapas.length === 0}
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Imprimir / PDF
+            </Button>
           </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">#</TableHead>
-                <TableHead>Jogador</TableHead>
-                <TableHead className="text-right">Pontos</TableHead>
-                <TableHead className="text-right">Etapas</TableHead>
-                <TableHead className="text-right">Premiações</TableHead>
-                <TableHead className="text-right">Melhor pos.</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {linhas.map((l, idx) => (
-                <TableRow key={l.player_id}>
-                  <TableCell className="font-bold">
-                    {l.total_pontos > 0 ? idx + 1 : '—'}
-                  </TableCell>
-                  <TableCell className="font-medium">{l.player_nick}</TableCell>
-                  <TableCell className="text-right font-mono font-bold">
-                    {l.total_pontos > 0 ? l.total_pontos.toFixed(2) : '0'}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">{l.etapas_disputadas}</TableCell>
-                  <TableCell className="text-right font-mono">
-                    {l.premiacoes > 0 ? l.premiacoes : '—'}
-                  </TableCell>
-                  <TableCell className="text-right font-mono">{l.melhor_posicao ?? '—'}º</TableCell>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
+          ) : linhas.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Medal className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>Nenhum jogador classificado neste mês.</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead className="w-16">#</TableHead>
+                  <TableHead>Jogador</TableHead>
+                  <TableHead className="text-right">Pontos</TableHead>
+                  <TableHead className="text-right">Etapas</TableHead>
+                  <TableHead className="text-right">Premiações</TableHead>
+                  <TableHead className="text-right">Melhor pos.</TableHead>
                 </TableRow>
+              </TableHeader>
+              <TableBody>
+                {linhas.map((l, idx) => (
+                  <TableRow key={l.player_id}>
+                    <TableCell className="font-bold">
+                      {l.total_pontos > 0 ? idx + 1 : '—'}
+                    </TableCell>
+                    <TableCell className="font-medium">{l.player_nick}</TableCell>
+                    <TableCell className="text-right font-mono font-bold">
+                      {l.total_pontos > 0 ? l.total_pontos.toFixed(2) : '0'}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">{l.etapas_disputadas}</TableCell>
+                    <TableCell className="text-right font-mono">
+                      {l.premiacoes > 0 ? l.premiacoes : '—'}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">{l.melhor_posicao ?? '—'}º</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Layout para impressão / PDF */}
+      {detalhado && detalhado.etapas.length > 0 && (
+        <div className="print-area">
+          <div className="text-center mb-4">
+            <h1 className="text-2xl font-bold">WOLF LIVE POKER — RANKING</h1>
+            <p className="text-lg font-semibold mt-1">{mesShort}</p>
+          </div>
+
+          <table className="w-full text-xs border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-400 px-2 py-1 text-left">CLASSIF.</th>
+                <th className="border border-gray-400 px-2 py-1 text-left">NOME</th>
+                {detalhado.etapas.map(e => (
+                  <th key={e.id} className="border border-gray-400 px-1 py-1 text-center">
+                    <div className="text-[10px] font-semibold">ETAPA {e.numero}</div>
+                    <div className="text-[10px] font-normal">
+                      {format(new Date(e.data_realizada + 'T12:00:00'), 'dd/MM')}
+                    </div>
+                  </th>
+                ))}
+                <th className="border border-gray-400 px-2 py-1 text-center">Total de Pontos</th>
+              </tr>
+            </thead>
+            <tbody>
+              {detalhado.jogadores.map((j, idx) => (
+                <tr key={j.player_id}>
+                  <td className="border border-gray-400 px-2 py-1 text-center font-bold">{idx + 1}º</td>
+                  <td className="border border-gray-400 px-2 py-1 font-medium">
+                    {j.player_nick}{j.player_name && j.player_name !== j.player_nick ? ` (${j.player_name})` : ''}
+                  </td>
+                  {detalhado.etapas.map(e => {
+                    const p = j.pontosPorEtapa[e.id]
+                    return (
+                      <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono">
+                        {p && p > 0 ? p : ''}
+                      </td>
+                    )
+                  })}
+                  <td className="border border-gray-400 px-2 py-1 text-center font-mono font-bold bg-gray-50">
+                    {j.total_pontos.toFixed(0)}
+                  </td>
+                </tr>
               ))}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
   )
 }
 
