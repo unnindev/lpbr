@@ -162,7 +162,19 @@
   }
 }
 
+@page {
+  margin: 1cm;
+}
+
+@page :first {
+  margin-top: 1cm;
+}
+
 @media print {
+  html, body {
+    background: #fff !important;
+  }
+
   body * {
     visibility: hidden;
   }
@@ -177,7 +189,7 @@
     left: 0;
     top: 0;
     width: 100%;
-    padding: 20px;
+    padding: 0;
     color: #000;
     background: #fff;
   }
@@ -188,5 +200,17 @@
 
   .print-page-break {
     page-break-after: always;
+  }
+
+  /* Tabelas de print sem quebrar linhas */
+  .print-area table {
+    page-break-inside: auto;
+  }
+  .print-area tr {
+    page-break-inside: avoid;
+    page-break-after: auto;
+  }
+  .print-area thead {
+    display: table-header-group;
   }
 }

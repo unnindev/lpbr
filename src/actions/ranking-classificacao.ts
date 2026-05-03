@@ -391,7 +391,14 @@ export async function salvarClassificacao(etapaId: string, linhas: Classificacao
 
 export interface RankingMensalDetalhado {
   mes_referencia: string
-  etapas: Array<{ id: string; nome: string; data_realizada: string; numero: number }>
+  etapas: Array<{
+    id: string
+    nome: string
+    data_realizada: string
+    numero: number
+    coleta_chips: number
+    saldo_acumulado: number
+  }>
   jogadores: Array<{
     player_id: string
     player_nick: string
@@ -419,14 +426,63 @@ export async function getRankingMensalDetalhado(mesReferencia: string): Promise<
     return { mes_referencia: mesReferencia, etapas: [], jogadores: [] }
   }
 
-  const etapasOrdered = etapas.map((e: { id: string; nome: string; data_realizada: string }, idx: number) => ({
+  const etapasBase = etapas.map((e: { id: string; nome: string; data_realizada: string }, idx: number) => ({
     id: e.id,
     nome: e.nome,
     data_realizada: e.data_realizada,
     numero: idx + 1,
   }))
 
-  const etapaIds = etapasOrdered.map((e: { id: string }) => e.id)
+  const etapaIds = etapasBase.map((e: { id: string }) => e.id)
+
+  // Coletas por etapa (chips de RANKING_COLETA com ranking_etapa_id setado)
+  const { data: coletas } = await auth.supabase
+    .from('transactions')
+    .select('ranking_etapa_id, chips')
+    .in('ranking_etapa_id', etapaIds)
+    .eq('operation_type', 'RANKING_COLETA')
+
+  const coletaPorEtapa = new Map<string, number>()
+  for (const c of coletas || []) {
+    const id = c.ranking_etapa_id as string
+    coletaPorEtapa.set(id, (coletaPorEtapa.get(id) || 0) + (parseFloat(c.chips) || 0))
+  }
+
+  // Pagamentos do mês (não atrelados a etapa específica) — pra calcular saldo acumulado
+  // Saldo acumulado de cada etapa = soma das coletas das etapas até ela − soma dos pagamentos com date <= data_realizada
+  const startMes = mesReferencia
+  const endMes = (() => {
+    const d = new Date(mesReferencia + 'T12:00:00')
+    d.setMonth(d.getMonth() + 1)
+    return d.toISOString().slice(0, 10)
+  })()
+
+  const { data: pagamentos } = await auth.supabase
+    .from('transactions')
+    .select('date, chips, value, operation_type')
+    .gte('date', startMes)
+    .lt('date', endMes)
+    .in('operation_type', ['RANKING_PAGAMENTO_FICHAS', 'RANKING_PAGAMENTO_DINHEIRO'])
+
+  const etapasOrdered = etapasBase.map((e: { id: string; nome: string; data_realizada: string; numero: number }) => {
+    const coleta = coletaPorEtapa.get(e.id) || 0
+    return { ...e, coleta_chips: coleta, saldo_acumulado: 0 }
+  })
+
+  // Saldo acumulado em ordem cronológica
+  let acumColetas = 0
+  for (const e of etapasOrdered) {
+    acumColetas += e.coleta_chips
+    const pagosAteAqui = (pagamentos || [])
+      .filter((p: { date: string }) => p.date <= e.data_realizada)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      .reduce((acc: number, p: any) => {
+        if (p.operation_type === 'RANKING_PAGAMENTO_FICHAS') return acc + (parseFloat(p.chips) || 0)
+        if (p.operation_type === 'RANKING_PAGAMENTO_DINHEIRO') return acc + (parseFloat(p.value) || 0)
+        return acc
+      }, 0)
+    e.saldo_acumulado = acumColetas - pagosAteAqui
+  }
 
   const { data: classifs } = await auth.supabase
     .from('ranking_classificacoes')

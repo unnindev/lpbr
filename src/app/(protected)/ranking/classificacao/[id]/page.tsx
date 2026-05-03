@@ -27,7 +27,7 @@ import {
 import { Checkbox } from '@/components/ui/checkbox'
 import { PlayerSelector } from '@/components/shared/player-selector'
 import { toast } from 'sonner'
-import { Loader2, Plus, Trash2, Save, ArrowLeft, AlertTriangle } from 'lucide-react'
+import { Loader2, Plus, Trash2, Save, ArrowLeft, AlertTriangle, Printer } from 'lucide-react'
 import {
   getEtapa,
   getPontosVersao,
@@ -179,13 +179,20 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
     return acc + premio * (etapa.percentual_coleta / 100)
   }, 0)
 
+  const handlePrint = () => {
+    window.print()
+  }
+
+  // Linhas ordenadas por posição pra impressão
+  const linhasOrdenadas = [...linhas].sort((a, b) => a.posicao - b.posicao)
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-4 no-print">
         <Button variant="outline" size="icon" onClick={() => router.push('/ranking/classificacao')}>
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-2xl font-bold text-gray-900">{etapa.nome}</h1>
           <p className="text-gray-500">
             {format(new Date(etapa.data_realizada + 'T12:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
@@ -193,6 +200,50 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
             Mês ref: {format(new Date(etapa.mes_referencia + 'T12:00:00'), "MMM/yy", { locale: ptBR })}
           </p>
         </div>
+        <Button variant="outline" onClick={handlePrint} disabled={linhas.length === 0}>
+          <Printer className="h-4 w-4 mr-2" />
+          Imprimir / PDF
+        </Button>
+      </div>
+
+      {/* Layout para impressão / PDF — apenas a etapa */}
+      <div className="print-area">
+        <div className="text-center mb-4">
+          <h1 className="text-2xl font-bold">WOLF LIVE POKER</h1>
+          <p className="text-lg font-semibold mt-1">{etapa.nome}</p>
+          <p className="text-sm">
+            {format(new Date(etapa.data_realizada + 'T12:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
+          </p>
+        </div>
+
+        <table className="w-full text-sm border-collapse">
+          <thead>
+            <tr className="bg-gray-100">
+              <th className="border border-gray-400 px-2 py-1 text-left w-20">Posição</th>
+              <th className="border border-gray-400 px-2 py-1 text-left">Jogador</th>
+              <th className="border border-gray-400 px-2 py-1 text-right w-24">Pontos</th>
+              <th className="border border-gray-400 px-2 py-1 text-right w-32">Prêmio</th>
+            </tr>
+          </thead>
+          <tbody>
+            {linhasOrdenadas.map((l) => {
+              const pontos = pontosMapa[l.posicao] || 0
+              const premio = parseFloat(l.premio_chips) || 0
+              return (
+                <tr key={l.id}>
+                  <td className="border border-gray-400 px-2 py-1 font-bold">{l.posicao}º</td>
+                  <td className="border border-gray-400 px-2 py-1">{l.player_nick}</td>
+                  <td className="border border-gray-400 px-2 py-1 text-right font-mono">
+                    {pontos > 0 ? pontos : ''}
+                  </td>
+                  <td className="border border-gray-400 px-2 py-1 text-right font-mono">
+                    {l.foi_premiado && premio > 0 ? formatChips(premio) : ''}
+                  </td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
 
       {/* Metadados editáveis */}

@@ -343,6 +343,30 @@ function RankingGeralView({ mes }: { mes: string }) {
                 </tr>
               ))}
             </tbody>
+            <tfoot>
+              <tr>
+                <td colSpan={2} className="border border-gray-400 px-2 py-1 font-bold text-right bg-gray-100">
+                  Coleta da Etapa
+                </td>
+                {detalhado.etapas.map(e => (
+                  <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono bg-gray-100">
+                    {e.coleta_chips > 0 ? e.coleta_chips.toFixed(2) : '—'}
+                  </td>
+                ))}
+                <td className="border border-gray-400 bg-gray-100"></td>
+              </tr>
+              <tr>
+                <td colSpan={2} className="border border-gray-400 px-2 py-1 font-bold text-right bg-gray-200">
+                  Saldo Acumulado
+                </td>
+                {detalhado.etapas.map(e => (
+                  <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono font-bold bg-gray-200">
+                    {e.saldo_acumulado.toFixed(2)}
+                  </td>
+                ))}
+                <td className="border border-gray-400 bg-gray-200"></td>
+              </tr>
+            </tfoot>
           </table>
         </div>
       )}
