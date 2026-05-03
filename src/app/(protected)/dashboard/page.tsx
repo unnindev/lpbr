@@ -203,18 +203,18 @@ export default async function DashboardPage() {
 
   const monthlyCards = [
     {
-      title: 'Rake Mensal',
+      title: 'Rake PPPoker',
       value: formatChips(rakeMensal),
       icon: Percent,
-      color: 'text-blue-600',
-      bgColor: 'bg-blue-50',
+      color: 'text-green-600',
+      bgColor: 'bg-green-50',
     },
     {
       title: 'Rake Suprema',
       value: formatCurrency(rakeSupremaMensal),
       icon: Coins,
-      color: 'text-indigo-600',
-      bgColor: 'bg-indigo-50',
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50',
     },
     {
       title: 'Custo Mensal',

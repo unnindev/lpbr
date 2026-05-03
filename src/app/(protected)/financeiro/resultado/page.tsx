@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import {
   Select,
   SelectContent,
@@ -9,46 +9,54 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { getResultadoMensal, getResultadoAcumulado } from '@/actions/financeiro'
+import { getResultadoMensal, getResultadoAcumulado, getResultadoAnual, type ResultadoAnualMes } from '@/actions/financeiro'
 import { formatCurrency, formatChips } from '@/lib/formatters'
 import {
   TrendingUp,
   TrendingDown,
   Percent,
-  Trophy,
+  Coins,
   PiggyBank,
-  Wallet,
   Loader2,
+  BarChart3,
 } from 'lucide-react'
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+} from 'recharts'
 
 interface ResultadoMensal {
   receitas: {
-    rake: number
-    rankingColeta: number
+    rakePPPoker: number
+    rakeSuprema: number
     total: number
   }
   despesas: {
     custos: number
-    rankingPremios: number
-    cashbackAgentes: number
     total: number
   }
   resultadoMes: number
 }
 
 const MESES = [
-  { value: 1, label: 'Janeiro' },
-  { value: 2, label: 'Fevereiro' },
-  { value: 3, label: 'Março' },
-  { value: 4, label: 'Abril' },
-  { value: 5, label: 'Maio' },
-  { value: 6, label: 'Junho' },
-  { value: 7, label: 'Julho' },
-  { value: 8, label: 'Agosto' },
-  { value: 9, label: 'Setembro' },
-  { value: 10, label: 'Outubro' },
-  { value: 11, label: 'Novembro' },
-  { value: 12, label: 'Dezembro' },
+  { value: 1, label: 'Janeiro', short: 'Jan' },
+  { value: 2, label: 'Fevereiro', short: 'Fev' },
+  { value: 3, label: 'Março', short: 'Mar' },
+  { value: 4, label: 'Abril', short: 'Abr' },
+  { value: 5, label: 'Maio', short: 'Mai' },
+  { value: 6, label: 'Junho', short: 'Jun' },
+  { value: 7, label: 'Julho', short: 'Jul' },
+  { value: 8, label: 'Agosto', short: 'Ago' },
+  { value: 9, label: 'Setembro', short: 'Set' },
+  { value: 10, label: 'Outubro', short: 'Out' },
+  { value: 11, label: 'Novembro', short: 'Nov' },
+  { value: 12, label: 'Dezembro', short: 'Dez' },
 ]
 
 export default function ResultadoPage() {
@@ -57,18 +65,21 @@ export default function ResultadoPage() {
   const [mes, setMes] = useState(hoje.getMonth() + 1)
   const [resultado, setResultado] = useState<ResultadoMensal | null>(null)
   const [resultadoAcumulado, setResultadoAcumulado] = useState(0)
+  const [anual, setAnual] = useState<ResultadoAnualMes[]>([])
   const [loading, setLoading] = useState(true)
 
   const loadData = useCallback(async () => {
     setLoading(true)
 
-    const [mensal, acumulado] = await Promise.all([
+    const [mensal, acumulado, anualData] = await Promise.all([
       getResultadoMensal(ano, mes),
       getResultadoAcumulado(),
+      getResultadoAnual(ano),
     ])
 
     setResultado(mensal)
     setResultadoAcumulado(acumulado)
+    setAnual(anualData)
     setLoading(false)
   }, [ano, mes])
 
@@ -85,6 +96,13 @@ export default function ResultadoPage() {
       </div>
     )
   }
+
+  const chartData = anual.map(m => ({
+    mes: MESES[m.mes - 1].short,
+    'Rake PPPoker': m.rakePPPoker,
+    'Rake Suprema': m.rakeSuprema,
+    'Custos': m.custos,
+  }))
 
   return (
     <div className="space-y-6">
@@ -134,7 +152,7 @@ export default function ResultadoPage() {
         </div>
       </div>
 
-      {/* Seção Receitas */}
+      {/* Receitas */}
       <Card>
         <CardHeader>
           <CardTitle className="text-green-600 flex items-center gap-2">
@@ -147,34 +165,34 @@ export default function ResultadoPage() {
             <div className="p-4 bg-green-50 rounded-lg">
               <div className="flex items-center gap-2 text-sm text-green-700 mb-1">
                 <Percent className="h-4 w-4" />
-                Rake
+                Rake PPPoker
               </div>
               <p className="text-2xl font-bold text-green-600">
-                {formatChips(resultado?.receitas.rake || 0)}
+                {formatChips(resultado?.receitas.rakePPPoker || 0)}
               </p>
             </div>
 
-            <div className="p-4 bg-green-50 rounded-lg">
-              <div className="flex items-center gap-2 text-sm text-green-700 mb-1">
-                <Trophy className="h-4 w-4" />
-                Ranking (Coletas)
+            <div className="p-4 bg-orange-50 rounded-lg">
+              <div className="flex items-center gap-2 text-sm text-orange-700 mb-1">
+                <Coins className="h-4 w-4" />
+                Rake Suprema
               </div>
-              <p className="text-2xl font-bold text-green-600">
-                {formatChips(resultado?.receitas.rankingColeta || 0)}
+              <p className="text-2xl font-bold text-orange-600">
+                {formatCurrency(resultado?.receitas.rakeSuprema || 0)}
               </p>
             </div>
 
             <div className="p-4 bg-green-100 rounded-lg border-2 border-green-300">
               <div className="text-sm text-green-700 mb-1">Total Receitas</div>
               <p className="text-3xl font-bold text-green-600">
-                {formatChips(resultado?.receitas.total || 0)}
+                {formatCurrency(resultado?.receitas.total || 0)}
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Seção Despesas */}
+      {/* Despesas */}
       <Card>
         <CardHeader>
           <CardTitle className="text-red-600 flex items-center gap-2">
@@ -183,7 +201,7 @@ export default function ResultadoPage() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <div className="p-4 bg-red-50 rounded-lg">
               <div className="flex items-center gap-2 text-sm text-red-700 mb-1">
                 <PiggyBank className="h-4 w-4" />
@@ -194,37 +212,17 @@ export default function ResultadoPage() {
               </p>
             </div>
 
-            <div className="p-4 bg-red-50 rounded-lg">
-              <div className="flex items-center gap-2 text-sm text-red-700 mb-1">
-                <Trophy className="h-4 w-4" />
-                Ranking (Prêmios)
-              </div>
-              <p className="text-2xl font-bold text-red-600">
-                {formatChips(resultado?.despesas.rankingPremios || 0)}
-              </p>
-            </div>
-
-            <div className="p-4 bg-red-50 rounded-lg">
-              <div className="flex items-center gap-2 text-sm text-red-700 mb-1">
-                <Wallet className="h-4 w-4" />
-                Cashback Agentes
-              </div>
-              <p className="text-2xl font-bold text-red-600">
-                {formatChips(resultado?.despesas.cashbackAgentes || 0)}
-              </p>
-            </div>
-
             <div className="p-4 bg-red-100 rounded-lg border-2 border-red-300">
               <div className="text-sm text-red-700 mb-1">Total Despesas</div>
               <p className="text-3xl font-bold text-red-600">
-                {formatChips(resultado?.despesas.total || 0)}
+                {formatCurrency(resultado?.despesas.total || 0)}
               </p>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Seção Resultado */}
+      {/* Resultado */}
       <div className="grid grid-cols-2 gap-4">
         <Card>
           <CardHeader>
@@ -237,7 +235,7 @@ export default function ResultadoPage() {
               }`}
             >
               {(resultado?.resultadoMes || 0) >= 0 ? '+' : ''}
-              {formatChips(resultado?.resultadoMes || 0)}
+              {formatCurrency(resultado?.resultadoMes || 0)}
             </div>
             <p className="text-sm text-gray-500 mt-2">
               {(resultado?.resultadoMes || 0) >= 0
@@ -258,12 +256,44 @@ export default function ResultadoPage() {
               }`}
             >
               {resultadoAcumulado >= 0 ? '+' : ''}
-              {formatChips(resultadoAcumulado)}
+              {formatCurrency(resultadoAcumulado)}
             </div>
             <p className="text-sm text-gray-500 mt-2">Desde o início das operações</p>
           </CardContent>
         </Card>
       </div>
+
+      {/* Gráfico Anual */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5 text-gray-500" />
+            Comparativo Anual — {ano}
+          </CardTitle>
+          <CardDescription>
+            Rake PPPoker, Rake Suprema e Custos Operacionais por mês.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="h-80 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="mes" stroke="#6b7280" fontSize={12} />
+                <YAxis stroke="#6b7280" fontSize={12} tickFormatter={(v) => v.toLocaleString('pt-BR')} />
+                <Tooltip
+                  formatter={(v) => Number(v).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                  contentStyle={{ borderRadius: 8, border: '1px solid #e5e7eb' }}
+                />
+                <Legend />
+                <Bar dataKey="Rake PPPoker" fill="#16a34a" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Rake Suprema" fill="#ea580c" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="Custos" fill="#dc2626" radius={[4, 4, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
