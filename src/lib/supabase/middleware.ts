@@ -46,10 +46,22 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Se está logado e está na página de login, redireciona para dashboard
+  // Caminhos permitidos para o role USER (whitelist)
+  const userAllowedPrefixes = [
+    '/ranking',
+    '/rake-semanal',
+    '/jogadores',
+  ]
+
+  // Se está logado e está na página de login, redireciona para a home apropriada
   if (user && request.nextUrl.pathname === '/login') {
+    const { data: userDataLogin } = await supabase
+      .from('users')
+      .select('role')
+      .eq('id', user.id)
+      .single()
     const url = request.nextUrl.clone()
-    url.pathname = '/dashboard'
+    url.pathname = userDataLogin?.role === 'USER' ? '/ranking' : '/dashboard'
     return NextResponse.redirect(url)
   }
 
@@ -69,16 +81,29 @@ export async function updateSession(request: NextRequest) {
       return NextResponse.redirect(url)
     }
 
-    // Rotas restritas por role
-    const codeOnlyRoutes = ['/usuarios', '/ajuste-inicial']
+    // Rotas restritas a CODE
+    const codeOnlyRoutes = ['/usuarios', '/ajuste-inicial', '/ranking-config', '/historico', '/debug-fichas']
     const isCodeOnlyRoute = codeOnlyRoutes.some((route) =>
       request.nextUrl.pathname.includes(route)
     )
 
     if (isCodeOnlyRoute && userData.role !== 'CODE') {
       const url = request.nextUrl.clone()
-      url.pathname = '/dashboard'
+      url.pathname = userData.role === 'USER' ? '/ranking' : '/dashboard'
       return NextResponse.redirect(url)
+    }
+
+    // Restrições do role USER — só pode acessar a whitelist
+    if (userData.role === 'USER') {
+      const isAllowed = userAllowedPrefixes.some(prefix =>
+        request.nextUrl.pathname === prefix ||
+        request.nextUrl.pathname.startsWith(prefix + '/')
+      )
+      if (!isAllowed) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/ranking'
+        return NextResponse.redirect(url)
+      }
     }
   }
 

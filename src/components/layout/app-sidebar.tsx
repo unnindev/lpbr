@@ -52,8 +52,8 @@ const menuGroups = [
   {
     label: 'OPERACIONAL',
     items: [
-      { title: 'LOG PPPoker', href: '/operacional/log', icon: FileText, roles: ['CODE', 'ADMIN', 'USER'] },
-      { title: 'Conciliação', href: '/operacional/conciliacao', icon: CheckSquare, roles: ['CODE', 'ADMIN', 'USER'] },
+      { title: 'LOG PPPoker', href: '/operacional/log', icon: FileText, roles: ['CODE', 'ADMIN'] },
+      { title: 'Conciliação', href: '/operacional/conciliacao', icon: CheckSquare, roles: ['CODE', 'ADMIN'] },
       { title: 'Rake', href: '/operacional/rake', icon: Percent, roles: ['CODE', 'ADMIN'] },
     ],
   },
