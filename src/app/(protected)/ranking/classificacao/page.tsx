@@ -311,9 +311,13 @@ function RankingGeralView({ mes }: { mes: string }) {
       {/* Layout para impressão / PDF */}
       {detalhado && detalhado.etapas.length > 0 && (
         <div className="print-area">
-          <div className="text-center mb-4">
-            <h1 className="text-2xl font-bold">WOLF LIVE POKER — RANKING</h1>
-            <p className="text-lg font-semibold mt-1">{mesShort}</p>
+          <div className="flex items-center justify-center gap-4 mb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-ranking.jpeg" alt="WOLF Logo" className="h-20 w-auto" />
+            <div className="text-center">
+              <h1 className="text-2xl font-bold">WOLF LIVE POKER — RANKING</h1>
+              <p className="text-lg font-semibold mt-1">{mesShort}</p>
+            </div>
           </div>
 
           <table className="w-full text-xs border-collapse">
