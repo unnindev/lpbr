@@ -312,7 +312,7 @@ function RankingResumoView({ mes }: { mes: string }) {
       </Card>
 
       {linhas.length > 0 && (
-        <div className="print-area">
+        <div className="print-area hidden print:block">
           <div className="flex items-center justify-center gap-4 mb-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-ranking.jpeg" alt="WOLF Logo" className="h-20 w-auto" />
@@ -487,7 +487,7 @@ function RankingPorEtapasView({ mes }: { mes: string }) {
       </Card>
 
       {detalhado && detalhado.etapas.length > 0 && (
-        <div className="print-area">
+        <div className="print-area hidden print:block">
           <div className="flex items-center justify-center gap-4 mb-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo-ranking.jpeg" alt="WOLF Logo" className="h-20 w-auto" />
