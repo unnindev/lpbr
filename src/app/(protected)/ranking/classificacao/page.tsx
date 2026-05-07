@@ -53,7 +53,7 @@ export default function ClassificacaoPage() {
   const router = useRouter()
   const [etapas, setEtapas] = useState<EtapaResumo[]>([])
   const [meses, setMeses] = useState<string[]>([])
-  const [filtroMes, setFiltroMes] = useState<string>('todos')
+  const [filtroMes, setFiltroMes] = useState<string>(() => format(new Date(), 'yyyy-MM-01'))
   const [loading, setLoading] = useState(true)
 
   const loadData = useCallback(async () => {
@@ -96,11 +96,14 @@ export default function ClassificacaoPage() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="todos">Todos</SelectItem>
-              {meses.map((m) => (
-                <SelectItem key={m} value={m}>
-                  {format(new Date(m + 'T12:00:00'), "MMMM 'de' yyyy", { locale: ptBR })}
-                </SelectItem>
-              ))}
+              {Array.from(new Set([filtroMes, ...meses]))
+                .filter(m => m !== 'todos')
+                .sort((a, b) => b.localeCompare(a))
+                .map((m) => (
+                  <SelectItem key={m} value={m}>
+                    {format(new Date(m + 'T12:00:00'), "MMMM 'de' yyyy", { locale: ptBR })}
+                  </SelectItem>
+                ))}
             </SelectContent>
           </Select>
 
@@ -112,6 +115,7 @@ export default function ClassificacaoPage() {
         <TabsList>
           <TabsTrigger value="etapas">Etapas</TabsTrigger>
           <TabsTrigger value="geral">Ranking Geral</TabsTrigger>
+          <TabsTrigger value="por_etapas">Classificação por Etapas</TabsTrigger>
         </TabsList>
 
         <TabsContent value="etapas" className="mt-4">
@@ -199,47 +203,47 @@ export default function ClassificacaoPage() {
         </TabsContent>
 
         <TabsContent value="geral" className="mt-4">
-          <RankingGeralView mes={filtroMes === 'todos' ? '' : filtroMes} />
+          <RankingResumoView mes={filtroMes === 'todos' ? '' : filtroMes} />
+        </TabsContent>
+
+        <TabsContent value="por_etapas" className="mt-4">
+          <RankingPorEtapasView mes={filtroMes === 'todos' ? '' : filtroMes} />
         </TabsContent>
       </Tabs>
     </div>
   )
 }
 
-function RankingGeralView({ mes }: { mes: string }) {
+function MesEmpty() {
+  return (
+    <Card>
+      <CardContent className="pt-6 text-center text-gray-500">
+        <Medal className="h-8 w-8 mx-auto mb-2 opacity-50" />
+        <p>Selecione um mês de referência acima.</p>
+      </CardContent>
+    </Card>
+  )
+}
+
+function RankingResumoView({ mes }: { mes: string }) {
   const [linhas, setLinhas] = useState<RankingGeralLinha[]>([])
-  const [detalhado, setDetalhado] = useState<RankingMensalDetalhado | null>(null)
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     if (!mes) {
       setLinhas([])
-      setDetalhado(null)
       return
     }
     setLoading(true)
-    Promise.all([getRankingGeral(mes), getRankingMensalDetalhado(mes)]).then(([data, det]) => {
+    getRankingGeral(mes).then(data => {
       setLinhas(data)
-      setDetalhado(det)
       setLoading(false)
     })
   }, [mes])
 
-  if (!mes) {
-    return (
-      <Card>
-        <CardContent className="pt-6 text-center text-gray-500">
-          <Medal className="h-8 w-8 mx-auto mb-2 opacity-50" />
-          <p>Selecione um mês de referência acima para ver o ranking geral.</p>
-        </CardContent>
-      </Card>
-    )
-  }
+  if (!mes) return <MesEmpty />
 
-  const handlePrint = () => {
-    window.print()
-  }
-
+  const handlePrint = () => window.print()
   const mesLabel = format(new Date(mes + 'T12:00:00'), "MMMM 'de' yyyy", { locale: ptBR })
   const mesShort = format(new Date(mes + 'T12:00:00'), "MMM/yyyy", { locale: ptBR }).toUpperCase()
 
@@ -251,14 +255,13 @@ function RankingGeralView({ mes }: { mes: string }) {
             <div>
               <CardTitle>Ranking Geral — {mesLabel}</CardTitle>
               <CardDescription>
-                Soma de pontos por jogador em todas as etapas do mês selecionado.
-                Apenas o top 20 pontua em cada etapa, mas todos os participantes são listados.
+                Resumo por jogador: pontos, etapas disputadas, premiações e melhor posição.
               </CardDescription>
             </div>
             <Button
               variant="outline"
               onClick={handlePrint}
-              disabled={loading || !detalhado || detalhado.etapas.length === 0}
+              disabled={loading || linhas.length === 0}
             >
               <Printer className="h-4 w-4 mr-2" />
               Imprimir / PDF
@@ -308,7 +311,181 @@ function RankingGeralView({ mes }: { mes: string }) {
         </CardContent>
       </Card>
 
-      {/* Layout para impressão / PDF */}
+      {linhas.length > 0 && (
+        <div className="print-area">
+          <div className="flex items-center justify-center gap-4 mb-4">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src="/logo-ranking.jpeg" alt="WOLF Logo" className="h-20 w-auto" />
+            <div className="text-center">
+              <h1 className="text-2xl font-bold">WOLF LIVE POKER — RANKING GERAL</h1>
+              <p className="text-lg font-semibold mt-1">{mesShort}</p>
+            </div>
+          </div>
+
+          <table className="w-full text-sm border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="border border-gray-400 px-2 py-1 text-left w-16">#</th>
+                <th className="border border-gray-400 px-2 py-1 text-left">Jogador</th>
+                <th className="border border-gray-400 px-2 py-1 text-right w-24">Pontos</th>
+                <th className="border border-gray-400 px-2 py-1 text-right w-24">Etapas</th>
+                <th className="border border-gray-400 px-2 py-1 text-right w-28">Premiações</th>
+                <th className="border border-gray-400 px-2 py-1 text-right w-28">Melhor pos.</th>
+              </tr>
+            </thead>
+            <tbody>
+              {linhas.map((l, idx) => (
+                <tr key={l.player_id}>
+                  <td className="border border-gray-400 px-2 py-1 font-bold">
+                    {l.total_pontos > 0 ? `${idx + 1}º` : '—'}
+                  </td>
+                  <td className="border border-gray-400 px-2 py-1 font-medium">{l.player_nick}</td>
+                  <td className="border border-gray-400 px-2 py-1 text-right font-mono font-bold">
+                    {l.total_pontos > 0 ? l.total_pontos.toFixed(0) : '0'}
+                  </td>
+                  <td className="border border-gray-400 px-2 py-1 text-right font-mono">
+                    {l.etapas_disputadas}
+                  </td>
+                  <td className="border border-gray-400 px-2 py-1 text-right font-mono">
+                    {l.premiacoes > 0 ? l.premiacoes : '—'}
+                  </td>
+                  <td className="border border-gray-400 px-2 py-1 text-right font-mono">
+                    {l.melhor_posicao ?? '—'}º
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </>
+  )
+}
+
+function RankingPorEtapasView({ mes }: { mes: string }) {
+  const [detalhado, setDetalhado] = useState<RankingMensalDetalhado | null>(null)
+  const [loading, setLoading] = useState(false)
+
+  useEffect(() => {
+    if (!mes) {
+      setDetalhado(null)
+      return
+    }
+    setLoading(true)
+    getRankingMensalDetalhado(mes).then(det => {
+      setDetalhado(det)
+      setLoading(false)
+    })
+  }, [mes])
+
+  if (!mes) return <MesEmpty />
+
+  const handlePrint = () => window.print()
+  const mesLabel = format(new Date(mes + 'T12:00:00'), "MMMM 'de' yyyy", { locale: ptBR })
+  const mesShort = format(new Date(mes + 'T12:00:00'), "MMM/yyyy", { locale: ptBR }).toUpperCase()
+
+  const renderMatrix = (klass: string) => detalhado && detalhado.etapas.length > 0 && (
+    <table className={`w-full text-xs border-collapse ${klass}`}>
+      <thead>
+        <tr className="bg-gray-100">
+          <th className="border border-gray-400 px-2 py-1 text-left">CLASSIF.</th>
+          <th className="border border-gray-400 px-2 py-1 text-left">NOME</th>
+          {detalhado.etapas.map(e => (
+            <th key={e.id} className="border border-gray-400 px-1 py-1 text-center">
+              <div className="text-[10px] font-semibold">ETAPA {e.numero}</div>
+              <div className="text-[10px] font-normal">
+                {format(new Date(e.data_realizada + 'T12:00:00'), 'dd/MM')}
+              </div>
+            </th>
+          ))}
+          <th className="border border-gray-400 px-2 py-1 text-center">Total de Pontos</th>
+        </tr>
+      </thead>
+      <tbody>
+        {detalhado.jogadores.map((j, idx) => (
+          <tr key={j.player_id}>
+            <td className="border border-gray-400 px-2 py-1 text-center font-bold">{idx + 1}º</td>
+            <td className="border border-gray-400 px-2 py-1 font-medium">
+              {j.player_nick}{j.player_name && j.player_name !== j.player_nick ? ` (${j.player_name})` : ''}
+            </td>
+            {detalhado.etapas.map(e => {
+              const p = j.pontosPorEtapa[e.id]
+              return (
+                <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono">
+                  {p && p > 0 ? p : ''}
+                </td>
+              )
+            })}
+            <td className="border border-gray-400 px-2 py-1 text-center font-mono font-bold bg-gray-50">
+              {j.total_pontos.toFixed(0)}
+            </td>
+          </tr>
+        ))}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colSpan={2} className="border border-gray-400 px-2 py-1 font-bold text-right bg-gray-100">
+            Coleta da Etapa
+          </td>
+          {detalhado.etapas.map(e => (
+            <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono bg-gray-100">
+              {e.coleta_chips > 0 ? e.coleta_chips.toFixed(2) : '—'}
+            </td>
+          ))}
+          <td className="border border-gray-400 bg-gray-100"></td>
+        </tr>
+        <tr>
+          <td colSpan={2} className="border border-gray-400 px-2 py-1 font-bold text-right bg-gray-200">
+            Saldo Acumulado
+          </td>
+          {detalhado.etapas.map(e => (
+            <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono font-bold bg-gray-200">
+              {e.saldo_acumulado.toFixed(2)}
+            </td>
+          ))}
+          <td className="border border-gray-400 bg-gray-200"></td>
+        </tr>
+      </tfoot>
+    </table>
+  )
+
+  return (
+    <>
+      <Card className="no-print">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle>Classificação por Etapas — {mesLabel}</CardTitle>
+              <CardDescription>
+                Pontos por jogador em cada etapa, total e saldo do ranking acumulado.
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              onClick={handlePrint}
+              disabled={loading || !detalhado || detalhado.etapas.length === 0}
+            >
+              <Printer className="h-4 w-4 mr-2" />
+              Imprimir / PDF
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {loading ? (
+            <div className="flex justify-center py-8"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div>
+          ) : !detalhado || detalhado.etapas.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Medal className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p>Nenhuma etapa registrada neste mês.</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              {renderMatrix('')}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {detalhado && detalhado.etapas.length > 0 && (
         <div className="print-area">
           <div className="flex items-center justify-center gap-4 mb-4">
@@ -319,69 +496,7 @@ function RankingGeralView({ mes }: { mes: string }) {
               <p className="text-lg font-semibold mt-1">{mesShort}</p>
             </div>
           </div>
-
-          <table className="w-full text-xs border-collapse">
-            <thead>
-              <tr className="bg-gray-100">
-                <th className="border border-gray-400 px-2 py-1 text-left">CLASSIF.</th>
-                <th className="border border-gray-400 px-2 py-1 text-left">NOME</th>
-                {detalhado.etapas.map(e => (
-                  <th key={e.id} className="border border-gray-400 px-1 py-1 text-center">
-                    <div className="text-[10px] font-semibold">ETAPA {e.numero}</div>
-                    <div className="text-[10px] font-normal">
-                      {format(new Date(e.data_realizada + 'T12:00:00'), 'dd/MM')}
-                    </div>
-                  </th>
-                ))}
-                <th className="border border-gray-400 px-2 py-1 text-center">Total de Pontos</th>
-              </tr>
-            </thead>
-            <tbody>
-              {detalhado.jogadores.map((j, idx) => (
-                <tr key={j.player_id}>
-                  <td className="border border-gray-400 px-2 py-1 text-center font-bold">{idx + 1}º</td>
-                  <td className="border border-gray-400 px-2 py-1 font-medium">
-                    {j.player_nick}{j.player_name && j.player_name !== j.player_nick ? ` (${j.player_name})` : ''}
-                  </td>
-                  {detalhado.etapas.map(e => {
-                    const p = j.pontosPorEtapa[e.id]
-                    return (
-                      <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono">
-                        {p && p > 0 ? p : ''}
-                      </td>
-                    )
-                  })}
-                  <td className="border border-gray-400 px-2 py-1 text-center font-mono font-bold bg-gray-50">
-                    {j.total_pontos.toFixed(0)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-            <tfoot>
-              <tr>
-                <td colSpan={2} className="border border-gray-400 px-2 py-1 font-bold text-right bg-gray-100">
-                  Coleta da Etapa
-                </td>
-                {detalhado.etapas.map(e => (
-                  <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono bg-gray-100">
-                    {e.coleta_chips > 0 ? e.coleta_chips.toFixed(2) : '—'}
-                  </td>
-                ))}
-                <td className="border border-gray-400 bg-gray-100"></td>
-              </tr>
-              <tr>
-                <td colSpan={2} className="border border-gray-400 px-2 py-1 font-bold text-right bg-gray-200">
-                  Saldo Acumulado
-                </td>
-                {detalhado.etapas.map(e => (
-                  <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono font-bold bg-gray-200">
-                    {e.saldo_acumulado.toFixed(2)}
-                  </td>
-                ))}
-                <td className="border border-gray-400 bg-gray-200"></td>
-              </tr>
-            </tfoot>
-          </table>
+          {renderMatrix('')}
         </div>
       )}
     </>
