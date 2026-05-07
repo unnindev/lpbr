@@ -48,6 +48,8 @@ import {
   type RankingGeralLinha,
   type RankingMensalDetalhado,
 } from '@/actions/ranking-classificacao'
+import { getCurrentUserRole } from '@/actions/auth'
+import type { UserRole } from '@/types'
 
 export default function ClassificacaoPage() {
   const router = useRouter()
@@ -55,6 +57,10 @@ export default function ClassificacaoPage() {
   const [meses, setMeses] = useState<string[]>([])
   const [filtroMes, setFiltroMes] = useState<string>(() => format(new Date(), 'yyyy-MM-01'))
   const [loading, setLoading] = useState(true)
+  const [role, setRole] = useState<UserRole | null>(null)
+  const isViewer = role === 'VIEWER'
+
+  useEffect(() => { getCurrentUserRole().then(setRole) }, [])
 
   const loadData = useCallback(async () => {
     setLoading(true)
@@ -107,7 +113,7 @@ export default function ClassificacaoPage() {
             </SelectContent>
           </Select>
 
-          <NovaEtapaDialog onCreated={(id) => router.push(`/ranking/classificacao/${id}`)} />
+          {!isViewer && <NovaEtapaDialog onCreated={(id) => router.push(`/ranking/classificacao/${id}`)} />}
         </div>
       </div>
 
@@ -174,23 +180,27 @@ export default function ClassificacaoPage() {
                             >
                               <Printer className="h-4 w-4" />
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => router.push(`/ranking/classificacao/${e.id}`)}
-                              title="Editar"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleExcluir(e.id, e.nome)}
-                              className="text-red-600"
-                              title="Excluir"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
+                            {!isViewer && (
+                              <>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => router.push(`/ranking/classificacao/${e.id}`)}
+                                  title="Editar"
+                                >
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleExcluir(e.id, e.nome)}
+                                  className="text-red-600"
+                                  title="Excluir"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
                           </div>
                         </TableCell>
                       </TableRow>

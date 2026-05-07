@@ -36,6 +36,8 @@ import {
   listarVersoesPontosResumo,
   type EtapaDetalhe,
 } from '@/actions/ranking-classificacao'
+import { getCurrentUserRole } from '@/actions/auth'
+import type { UserRole } from '@/types'
 import { formatChips } from '@/lib/formatters'
 
 interface Linha {
@@ -59,6 +61,10 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
   const [versoes, setVersoes] = useState<Array<{ id: string; label: string; ativa: boolean }>>([])
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
+  const [role, setRole] = useState<UserRole | null>(null)
+  const isViewer = role === 'VIEWER'
+
+  useEffect(() => { getCurrentUserRole().then(setRole) }, [])
 
   // Edição dos metadados da etapa
   const [editNome, setEditNome] = useState('')
@@ -260,8 +266,8 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
         </table>
       </div>
 
-      {/* Metadados editáveis */}
-      <Card>
+      {/* Metadados editáveis (oculto para VIEWER) */}
+      {!isViewer && <Card>
         <CardHeader>
           <CardTitle>Dados da etapa</CardTitle>
           <CardDescription>Edite metadados da etapa. Mudar a versão de pontos não altera classificações já salvas.</CardDescription>
@@ -327,10 +333,10 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
             </div>
           </div>
         </CardContent>
-      </Card>
+      </Card>}
 
       {/* Aviso quando não há versão de pontos */}
-      {semVersao && (
+      {!isViewer && semVersao && (
         <Card className="border-orange-300 bg-orange-50">
           <CardContent className="pt-6 flex items-start gap-3">
             <AlertTriangle className="h-5 w-5 text-orange-600 mt-0.5 shrink-0" />
@@ -349,18 +355,22 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
             <div>
               <CardTitle>Classificação</CardTitle>
               <CardDescription>
-                Lance todos os jogadores da etapa. Marque os premiados para gerar a coleta automaticamente.
+                {isViewer
+                  ? 'Visualização das posições e pontuações da etapa.'
+                  : 'Lance todos os jogadores da etapa. Marque os premiados para gerar a coleta automaticamente.'}
               </CardDescription>
             </div>
-            <Button variant="outline" onClick={addLinha}>
-              <Plus className="h-4 w-4 mr-1" /> Adicionar Jogador
-            </Button>
+            {!isViewer && (
+              <Button variant="outline" onClick={addLinha}>
+                <Plus className="h-4 w-4 mr-1" /> Adicionar Jogador
+              </Button>
+            )}
           </div>
         </CardHeader>
         <CardContent>
           {linhas.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              <p>Nenhum jogador lançado. Clique em &quot;Adicionar Jogador&quot;.</p>
+              <p>{isViewer ? 'Nenhum jogador lançado nesta etapa.' : 'Nenhum jogador lançado. Clique em "Adicionar Jogador".'}</p>
             </div>
           ) : (
             <>
@@ -370,70 +380,86 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
                     <TableHead className="w-20">Posição</TableHead>
                     <TableHead>Jogador</TableHead>
                     <TableHead className="text-right w-24">Pontos</TableHead>
-                    <TableHead className="w-24 text-center">Premiado?</TableHead>
-                    <TableHead className="w-40">Prêmio (chips)</TableHead>
-                    <TableHead className="text-right w-32">Coleta gerada</TableHead>
-                    <TableHead className="w-12"></TableHead>
+                    {!isViewer && <TableHead className="w-24 text-center">Premiado?</TableHead>}
+                    {!isViewer && <TableHead className="w-40">Prêmio (chips)</TableHead>}
+                    {!isViewer && <TableHead className="text-right w-32">Coleta gerada</TableHead>}
+                    {!isViewer && <TableHead className="w-12"></TableHead>}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {linhas.map((l) => {
+                  {(isViewer ? linhasOrdenadas : linhas).map((l) => {
                     const pontos = pontosMapa[l.posicao] || 0
                     const premio = parseFloat(l.premio_chips) || 0
                     const coleta = l.foi_premiado ? premio * (etapa.percentual_coleta / 100) : 0
                     return (
                       <TableRow key={l.id}>
                         <TableCell>
-                          <Input
-                            type="number"
-                            min="1"
-                            value={l.posicao.toString()}
-                            onChange={(e) => updateLinha(l.id, { posicao: parseInt(e.target.value) || 1 })}
-                            className="w-16"
-                          />
+                          {isViewer ? (
+                            <span className="font-bold">{l.posicao}º</span>
+                          ) : (
+                            <Input
+                              type="number"
+                              min="1"
+                              value={l.posicao.toString()}
+                              onChange={(e) => updateLinha(l.id, { posicao: parseInt(e.target.value) || 1 })}
+                              className="w-16"
+                            />
+                          )}
                         </TableCell>
                         <TableCell>
-                          <PlayerSelector
-                            value={l.player_id}
-                            onSelect={(playerId, player) => {
-                              updateLinha(l.id, { player_id: playerId, player_nick: player?.nick || '' })
-                            }}
-                          />
+                          {isViewer ? (
+                            <span className="font-medium">{l.player_nick}</span>
+                          ) : (
+                            <PlayerSelector
+                              value={l.player_id}
+                              onSelect={(playerId, player) => {
+                                updateLinha(l.id, { player_id: playerId, player_nick: player?.nick || '' })
+                              }}
+                            />
+                          )}
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm">
                           {pontos > 0 ? pontos : <span className="text-gray-400">—</span>}
                         </TableCell>
-                        <TableCell className="text-center">
-                          <Checkbox
-                            checked={l.foi_premiado}
-                            onCheckedChange={(v) => updateLinha(l.id, { foi_premiado: !!v })}
-                          />
-                        </TableCell>
-                        <TableCell>
-                          <Input
-                            type="number"
-                            min="0"
-                            step="0.01"
-                            value={l.premio_chips}
-                            onChange={(e) => updateLinha(l.id, { premio_chips: e.target.value })}
-                            placeholder="0,00"
-                            disabled={!l.foi_premiado}
-                            className="w-32"
-                          />
-                        </TableCell>
-                        <TableCell className="text-right font-mono text-sm text-orange-600">
-                          {coleta > 0 ? formatChips(coleta) : <span className="text-gray-400">—</span>}
-                        </TableCell>
-                        <TableCell>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => removeLinha(l.id)}
-                            className="text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
+                        {!isViewer && (
+                          <TableCell className="text-center">
+                            <Checkbox
+                              checked={l.foi_premiado}
+                              onCheckedChange={(v) => updateLinha(l.id, { foi_premiado: !!v })}
+                            />
+                          </TableCell>
+                        )}
+                        {!isViewer && (
+                          <TableCell>
+                            <Input
+                              type="number"
+                              min="0"
+                              step="0.01"
+                              value={l.premio_chips}
+                              onChange={(e) => updateLinha(l.id, { premio_chips: e.target.value })}
+                              placeholder="0,00"
+                              disabled={!l.foi_premiado}
+                              className="w-32"
+                            />
+                          </TableCell>
+                        )}
+                        {!isViewer && (
+                          <TableCell className="text-right font-mono text-sm text-orange-600">
+                            {coleta > 0 ? formatChips(coleta) : <span className="text-gray-400">—</span>}
+                          </TableCell>
+                        )}
+                        {!isViewer && (
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              onClick={() => removeLinha(l.id)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
+                        )}
                       </TableRow>
                     )
                   })}
@@ -443,14 +469,18 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
               <div className="mt-4 pt-4 border-t flex items-center justify-between">
                 <div className="flex items-center gap-4 text-sm">
                   <Badge variant="outline">{linhas.length} jogadores</Badge>
-                  <Badge variant="outline" className="text-orange-600 border-orange-600">
-                    Total coleta: {formatChips(totalColetaChips)}
-                  </Badge>
+                  {!isViewer && (
+                    <Badge variant="outline" className="text-orange-600 border-orange-600">
+                      Total coleta: {formatChips(totalColetaChips)}
+                    </Badge>
+                  )}
                 </div>
-                <Button onClick={handleSalvarClassif} disabled={saving}>
-                  {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
-                  Salvar Classificação
-                </Button>
+                {!isViewer && (
+                  <Button onClick={handleSalvarClassif} disabled={saving}>
+                    {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                    Salvar Classificação
+                  </Button>
+                )}
               </div>
             </>
           )}

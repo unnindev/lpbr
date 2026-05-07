@@ -392,7 +392,7 @@ export type RankingType = 'COLETA' | 'PAGAMENTO'
 
 export type PaymentMethod = 'DINHEIRO' | 'FICHAS' | 'ABATE_DIVIDA'
 
-export type UserRole = 'CODE' | 'ADMIN' | 'USER'
+export type UserRole = 'CODE' | 'ADMIN' | 'USER' | 'VIEWER'
 
 // Helpers para acesso às tabelas
 export type Tables<T extends keyof Database['public']['Tables']> =

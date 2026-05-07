@@ -53,6 +53,17 @@ export async function updateSession(request: NextRequest) {
     '/jogadores',
   ]
 
+  // Caminhos permitidos para o role VIEWER (somente leitura do ranking)
+  const viewerAllowedPrefixes = [
+    '/ranking/classificacao',
+  ]
+
+  const homeForRole = (role?: string) => {
+    if (role === 'VIEWER') return '/ranking/classificacao'
+    if (role === 'USER') return '/ranking'
+    return '/dashboard'
+  }
+
   // Se está logado e está na página de login, redireciona para a home apropriada
   if (user && request.nextUrl.pathname === '/login') {
     const { data: userDataLogin } = await supabase
@@ -61,7 +72,7 @@ export async function updateSession(request: NextRequest) {
       .eq('id', user.id)
       .single()
     const url = request.nextUrl.clone()
-    url.pathname = userDataLogin?.role === 'USER' ? '/ranking' : '/dashboard'
+    url.pathname = homeForRole(userDataLogin?.role as string | undefined)
     return NextResponse.redirect(url)
   }
 
@@ -89,7 +100,7 @@ export async function updateSession(request: NextRequest) {
 
     if (isCodeOnlyRoute && userData.role !== 'CODE') {
       const url = request.nextUrl.clone()
-      url.pathname = userData.role === 'USER' ? '/ranking' : '/dashboard'
+      url.pathname = homeForRole(userData.role as string | undefined)
       return NextResponse.redirect(url)
     }
 
@@ -102,6 +113,19 @@ export async function updateSession(request: NextRequest) {
       if (!isAllowed) {
         const url = request.nextUrl.clone()
         url.pathname = '/ranking'
+        return NextResponse.redirect(url)
+      }
+    }
+
+    // Restrições do role VIEWER — só pode acessar a whitelist (e somente leitura)
+    if (userData.role === 'VIEWER') {
+      const isAllowed = viewerAllowedPrefixes.some(prefix =>
+        request.nextUrl.pathname === prefix ||
+        request.nextUrl.pathname.startsWith(prefix + '/')
+      )
+      if (!isAllowed) {
+        const url = request.nextUrl.clone()
+        url.pathname = '/ranking/classificacao'
         return NextResponse.redirect(url)
       }
     }

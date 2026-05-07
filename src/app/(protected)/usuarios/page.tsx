@@ -62,18 +62,21 @@ const ROLE_LABELS: Record<UserRole, string> = {
   CODE: 'Desenvolvedor',
   ADMIN: 'Administrador',
   USER: 'Usuário',
+  VIEWER: 'Visualizador',
 }
 
 const ROLE_ICONS: Record<UserRole, typeof Shield> = {
   CODE: ShieldAlert,
   ADMIN: ShieldCheck,
   USER: Shield,
+  VIEWER: Shield,
 }
 
 const ROLE_COLORS: Record<UserRole, string> = {
   CODE: 'text-purple-600 bg-purple-100',
   ADMIN: 'text-blue-600 bg-blue-100',
   USER: 'text-gray-600 bg-gray-100',
+  VIEWER: 'text-amber-600 bg-amber-100',
 }
 
 export default function UsuariosPage() {
@@ -377,12 +380,13 @@ export default function UsuariosPage() {
               >
                 <SelectTrigger>
                   <SelectValue>
-                    {createRole === 'USER' ? 'Usuário' : createRole === 'ADMIN' ? 'Administrador' : undefined}
+                    {createRole === 'USER' ? 'Usuário' : createRole === 'ADMIN' ? 'Administrador' : createRole === 'VIEWER' ? 'Visualizador (Ranking)' : undefined}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="USER">Usuário</SelectItem>
                   <SelectItem value="ADMIN">Administrador</SelectItem>
+                  <SelectItem value="VIEWER">Visualizador (Ranking)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -429,12 +433,13 @@ export default function UsuariosPage() {
               >
                 <SelectTrigger>
                   <SelectValue>
-                    {editRole === 'USER' ? 'Usuário' : editRole === 'ADMIN' ? 'Administrador' : undefined}
+                    {editRole === 'USER' ? 'Usuário' : editRole === 'ADMIN' ? 'Administrador' : editRole === 'VIEWER' ? 'Visualizador (Ranking)' : undefined}
                   </SelectValue>
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="USER">Usuário</SelectItem>
                   <SelectItem value="ADMIN">Administrador</SelectItem>
+                  <SelectItem value="VIEWER">Visualizador (Ranking)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
