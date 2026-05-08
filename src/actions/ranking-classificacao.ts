@@ -43,6 +43,7 @@ export interface EtapaDetalhe {
     foi_premiado: boolean
     premio_chips: number | null
     coleta_transaction_id: string | null
+    rebuys_addons: number
   }>
 }
 
@@ -142,7 +143,7 @@ export async function getEtapa(id: string): Promise<EtapaDetalhe | null> {
   const { data: classifs } = await auth.supabase
     .from('ranking_classificacoes')
     .select(`
-      id, posicao, pontos_snapshot, foi_premiado, premio_chips, coleta_transaction_id,
+      id, posicao, pontos_snapshot, foi_premiado, premio_chips, coleta_transaction_id, rebuys_addons,
       player:players(id, nick, name)
     `)
     .eq('etapa_id', id)
@@ -167,6 +168,7 @@ export async function getEtapa(id: string): Promise<EtapaDetalhe | null> {
       foi_premiado: c.foi_premiado,
       premio_chips: c.premio_chips ? parseFloat(c.premio_chips) : null,
       coleta_transaction_id: c.coleta_transaction_id,
+      rebuys_addons: c.rebuys_addons ?? 0,
     })),
   }
 }
@@ -263,6 +265,7 @@ export interface ClassificacaoInput {
   posicao: number
   foi_premiado: boolean
   premio_chips: number | null
+  rebuys_addons: number
 }
 
 export async function salvarClassificacao(etapaId: string, linhas: ClassificacaoInput[]) {
@@ -364,6 +367,7 @@ export async function salvarClassificacao(etapaId: string, linhas: Classificacao
           foi_premiado: linha.foi_premiado,
           premio_chips: linha.foi_premiado ? linha.premio_chips : null,
           coleta_transaction_id: coletaTxId,
+          rebuys_addons: linha.rebuys_addons,
         })
         .eq('id', existente.id)
     } else {
@@ -375,6 +379,7 @@ export async function salvarClassificacao(etapaId: string, linhas: Classificacao
         foi_premiado: linha.foi_premiado,
         premio_chips: linha.foi_premiado ? linha.premio_chips : null,
         coleta_transaction_id: coletaTxId,
+        rebuys_addons: linha.rebuys_addons,
       })
     }
   }
@@ -405,10 +410,12 @@ export interface RankingMensalDetalhado {
     player_name: string
     pontosPorEtapa: Record<string, number>
     posicaoPorEtapa: Record<string, number>
+    rebuysPorEtapa: Record<string, number>
     total_pontos: number
     melhor_posicao: number | null
     premiacoes: number
     etapas_disputadas: number
+    total_rebuys: number
   }>
 }
 
@@ -487,7 +494,7 @@ export async function getRankingMensalDetalhado(mesReferencia: string): Promise<
   const { data: classifs } = await auth.supabase
     .from('ranking_classificacoes')
     .select(`
-      etapa_id, player_id, posicao, pontos_snapshot, foi_premiado,
+      etapa_id, player_id, posicao, pontos_snapshot, foi_premiado, rebuys_addons,
       player:players(id, nick, name)
     `)
     .in('etapa_id', etapaIds)
@@ -505,17 +512,22 @@ export async function getRankingMensalDetalhado(mesReferencia: string): Promise<
         player_name: c.player?.name || '',
         pontosPorEtapa: {},
         posicaoPorEtapa: {},
+        rebuysPorEtapa: {},
         total_pontos: 0,
         melhor_posicao: null,
         premiacoes: 0,
         etapas_disputadas: 0,
+        total_rebuys: 0,
       })
     }
     const j = mapa.get(id)!
     const pontos = parseFloat(c.pontos_snapshot) || 0
+    const rebuys = c.rebuys_addons ?? 0
     j.pontosPorEtapa[c.etapa_id] = pontos
     j.posicaoPorEtapa[c.etapa_id] = c.posicao
+    j.rebuysPorEtapa[c.etapa_id] = rebuys
     j.total_pontos += pontos
+    j.total_rebuys += rebuys
     j.etapas_disputadas++
     if (c.foi_premiado) j.premiacoes++
     if (j.melhor_posicao === null || c.posicao < j.melhor_posicao) {
@@ -540,6 +552,7 @@ export interface RankingGeralLinha {
   etapas_disputadas: number
   premiacoes: number
   melhor_posicao: number | null
+  total_rebuys: number
 }
 
 export async function getRankingGeral(mesReferencia: string): Promise<RankingGeralLinha[]> {
@@ -558,7 +571,7 @@ export async function getRankingGeral(mesReferencia: string): Promise<RankingGer
   const { data: classifs } = await auth.supabase
     .from('ranking_classificacoes')
     .select(`
-      player_id, posicao, pontos_snapshot, foi_premiado,
+      player_id, posicao, pontos_snapshot, foi_premiado, rebuys_addons,
       player:players(id, nick, name)
     `)
     .in('etapa_id', etapaIds)
@@ -578,10 +591,12 @@ export async function getRankingGeral(mesReferencia: string): Promise<RankingGer
         etapas_disputadas: 0,
         premiacoes: 0,
         melhor_posicao: null,
+        total_rebuys: 0,
       })
     }
     const linha = mapa.get(id)!
     linha.total_pontos += parseFloat(c.pontos_snapshot) || 0
+    linha.total_rebuys += c.rebuys_addons ?? 0
     linha.etapas_disputadas++
     if (c.foi_premiado) linha.premiacoes++
     if (linha.melhor_posicao === null || c.posicao < linha.melhor_posicao) {

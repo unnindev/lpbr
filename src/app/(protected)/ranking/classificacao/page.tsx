@@ -295,6 +295,7 @@ function RankingResumoView({ mes }: { mes: string }) {
                   <TableHead className="text-right">Pontos</TableHead>
                   <TableHead className="text-right">Etapas</TableHead>
                   <TableHead className="text-right">Premiações</TableHead>
+                  <TableHead className="text-right">Rebuys/Add</TableHead>
                   <TableHead className="text-right">Melhor pos.</TableHead>
                 </TableRow>
               </TableHeader>
@@ -311,6 +312,9 @@ function RankingResumoView({ mes }: { mes: string }) {
                     <TableCell className="text-right font-mono">{l.etapas_disputadas}</TableCell>
                     <TableCell className="text-right font-mono">
                       {l.premiacoes > 0 ? l.premiacoes : '—'}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {l.total_rebuys > 0 ? l.total_rebuys : '—'}
                     </TableCell>
                     <TableCell className="text-right font-mono">{l.melhor_posicao ?? '—'}º</TableCell>
                   </TableRow>
@@ -340,6 +344,7 @@ function RankingResumoView({ mes }: { mes: string }) {
                 <th className="border border-gray-400 px-2 py-1 text-right w-24">Pontos</th>
                 <th className="border border-gray-400 px-2 py-1 text-right w-24">Etapas</th>
                 <th className="border border-gray-400 px-2 py-1 text-right w-28">Premiações</th>
+                <th className="border border-gray-400 px-2 py-1 text-right w-24">Rebuys/Add</th>
                 <th className="border border-gray-400 px-2 py-1 text-right w-28">Melhor pos.</th>
               </tr>
             </thead>
@@ -358,6 +363,9 @@ function RankingResumoView({ mes }: { mes: string }) {
                   </td>
                   <td className="border border-gray-400 px-2 py-1 text-right font-mono">
                     {l.premiacoes > 0 ? l.premiacoes : '—'}
+                  </td>
+                  <td className="border border-gray-400 px-2 py-1 text-right font-mono">
+                    {l.total_rebuys > 0 ? l.total_rebuys : '—'}
                   </td>
                   <td className="border border-gray-400 px-2 py-1 text-right font-mono">
                     {l.melhor_posicao ?? '—'}º

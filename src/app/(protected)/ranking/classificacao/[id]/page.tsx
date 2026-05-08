@@ -48,6 +48,7 @@ interface Linha {
   posicao: number
   foi_premiado: boolean
   premio_chips: string
+  rebuys_addons: string
 }
 
 export default function EtapaDetalhePage({ params }: { params: Promise<{ id: string }> }) {
@@ -105,6 +106,7 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
       posicao: c.posicao,
       foi_premiado: c.foi_premiado,
       premio_chips: c.premio_chips ? c.premio_chips.toString() : '',
+      rebuys_addons: c.rebuys_addons ? c.rebuys_addons.toString() : '',
     })))
     setLoading(false)
   }, [etapaId, router])
@@ -124,7 +126,7 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
     const proxPos = linhas.length === 0 ? 1 : Math.max(...linhas.map(l => l.posicao)) + 1
     setLinhas([
       ...linhas,
-      { id: crypto.randomUUID(), player_id: '', player_nick: '', posicao: proxPos, foi_premiado: false, premio_chips: '' },
+      { id: crypto.randomUUID(), player_id: '', player_nick: '', posicao: proxPos, foi_premiado: false, premio_chips: '', rebuys_addons: '' },
     ])
   }
 
@@ -173,6 +175,7 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
       posicao: l.posicao,
       foi_premiado: l.foi_premiado,
       premio_chips: l.foi_premiado ? (parseFloat(l.premio_chips) || 0) : null,
+      rebuys_addons: parseInt(l.rebuys_addons) || 0,
     })))
     setSaving(false)
 
@@ -242,6 +245,7 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
               <th className="border border-gray-400 px-2 py-1 text-left w-20">Posição</th>
               <th className="border border-gray-400 px-2 py-1 text-left">Jogador</th>
               <th className="border border-gray-400 px-2 py-1 text-right w-24">Pontos</th>
+              <th className="border border-gray-400 px-2 py-1 text-right w-24">Rebuys/Add</th>
               <th className="border border-gray-400 px-2 py-1 text-right w-32">Prêmio</th>
             </tr>
           </thead>
@@ -249,12 +253,16 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
             {linhasOrdenadas.map((l) => {
               const pontos = pontosMapa[l.posicao] || 0
               const premio = parseFloat(l.premio_chips) || 0
+              const rebuys = parseInt(l.rebuys_addons) || 0
               return (
                 <tr key={l.id}>
                   <td className="border border-gray-400 px-2 py-1 font-bold">{l.posicao}º</td>
                   <td className="border border-gray-400 px-2 py-1">{l.player_nick}</td>
                   <td className="border border-gray-400 px-2 py-1 text-right font-mono">
                     {pontos > 0 ? pontos : ''}
+                  </td>
+                  <td className="border border-gray-400 px-2 py-1 text-right font-mono">
+                    {rebuys > 0 ? rebuys : ''}
                   </td>
                   <td className="border border-gray-400 px-2 py-1 text-right font-mono">
                     {l.foi_premiado && premio > 0 ? formatChips(premio) : ''}
@@ -380,6 +388,7 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
                     <TableHead className="w-20">Posição</TableHead>
                     <TableHead>Jogador</TableHead>
                     <TableHead className="text-right w-24">Pontos</TableHead>
+                    <TableHead className="text-right w-28">Rebuys/Add</TableHead>
                     {!isViewer && <TableHead className="w-24 text-center">Premiado?</TableHead>}
                     {!isViewer && <TableHead className="w-40">Prêmio (chips)</TableHead>}
                     {!isViewer && <TableHead className="text-right w-32">Coleta gerada</TableHead>}
@@ -420,6 +429,23 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
                         </TableCell>
                         <TableCell className="text-right font-mono text-sm">
                           {pontos > 0 ? pontos : <span className="text-gray-400">—</span>}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isViewer ? (
+                            <span className="font-mono text-sm">
+                              {parseInt(l.rebuys_addons) > 0 ? l.rebuys_addons : <span className="text-gray-400">—</span>}
+                            </span>
+                          ) : (
+                            <Input
+                              type="number"
+                              min="0"
+                              step="1"
+                              value={l.rebuys_addons}
+                              onChange={(e) => updateLinha(l.id, { rebuys_addons: e.target.value.replace(/[^\d]/g, '') })}
+                              placeholder="0"
+                              className="w-20 ml-auto text-right"
+                            />
+                          )}
                         </TableCell>
                         {!isViewer && (
                           <TableCell className="text-center">
