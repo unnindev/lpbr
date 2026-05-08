@@ -73,6 +73,7 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
   const [editVersao, setEditVersao] = useState('')
   const [editPercentual, setEditPercentual] = useState('')
   const [editRebuys, setEditRebuys] = useState('')
+  const [editAddons, setEditAddons] = useState('')
   const [savingMeta, setSavingMeta] = useState(false)
 
   const loadData = useCallback(async () => {
@@ -90,7 +91,8 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
     setEditMes(det.mes_referencia)
     setEditVersao(det.pontos_versao_id || '')
     setEditPercentual(det.percentual_coleta.toString())
-    setEditRebuys(det.rebuys_addons ? det.rebuys_addons.toString() : '')
+    setEditRebuys(det.rebuys ? det.rebuys.toString() : '')
+    setEditAddons(det.addons ? det.addons.toString() : '')
 
     if (det.pontos_versao_id) {
       const mapa = await getPontosVersao(det.pontos_versao_id)
@@ -146,7 +148,8 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
       mes_referencia: editMes,
       pontos_versao_id: editVersao || null,
       percentual_coleta: parseFloat(editPercentual) || 0,
-      rebuys_addons: parseInt(editRebuys) || 0,
+      rebuys: parseInt(editRebuys) || 0,
+      addons: parseInt(editAddons) || 0,
     })
     setSavingMeta(false)
     if (r.success) {
@@ -236,9 +239,11 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
             <p className="text-sm">
               {format(new Date(etapa.data_realizada + 'T12:00:00'), "dd 'de' MMMM 'de' yyyy", { locale: ptBR })}
             </p>
-            {etapa.rebuys_addons > 0 && (
+            {(etapa.rebuys > 0 || etapa.addons > 0) && (
               <p className="text-sm mt-1">
-                <strong>Rebuys / Add-ons:</strong> {etapa.rebuys_addons}
+                {etapa.rebuys > 0 && <><strong>Rebuys:</strong> {etapa.rebuys}</>}
+                {etapa.rebuys > 0 && etapa.addons > 0 && <>{' · '}</>}
+                {etapa.addons > 0 && <><strong>Add-ons:</strong> {etapa.addons}</>}
               </p>
             )}
           </div>
@@ -334,13 +339,25 @@ export default function EtapaDetalhePage({ params }: { params: Promise<{ id: str
               </div>
             </div>
             <div>
-              <Label>Rebuys / Add-ons</Label>
+              <Label>Rebuys</Label>
               <Input
                 type="number"
                 min="0"
                 step="1"
                 value={editRebuys}
                 onChange={(e) => setEditRebuys(e.target.value.replace(/[^\d]/g, ''))}
+                placeholder="0"
+                className="w-24"
+              />
+            </div>
+            <div>
+              <Label>Add-ons</Label>
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                value={editAddons}
+                onChange={(e) => setEditAddons(e.target.value.replace(/[^\d]/g, ''))}
                 placeholder="0"
                 className="w-24"
               />

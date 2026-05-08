@@ -435,11 +435,22 @@ function RankingPorEtapasView({ mes }: { mes: string }) {
       <tfoot>
         <tr>
           <td colSpan={2} className="border border-gray-400 px-2 py-1 font-bold text-right bg-gray-50">
-            Rebuys / Add-ons
+            Rebuys
           </td>
           {detalhado.etapas.map(e => (
             <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono bg-gray-50">
-              {e.rebuys_addons > 0 ? e.rebuys_addons : '—'}
+              {e.rebuys > 0 ? e.rebuys : '—'}
+            </td>
+          ))}
+          <td className="border border-gray-400 bg-gray-50"></td>
+        </tr>
+        <tr>
+          <td colSpan={2} className="border border-gray-400 px-2 py-1 font-bold text-right bg-gray-50">
+            Add-ons
+          </td>
+          {detalhado.etapas.map(e => (
+            <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono bg-gray-50">
+              {e.addons > 0 ? e.addons : '—'}
             </td>
           ))}
           <td className="border border-gray-400 bg-gray-50"></td>
@@ -533,6 +544,7 @@ function NovaEtapaDialog({ onCreated }: { onCreated: (id: string) => void }) {
   const [versaoId, setVersaoId] = useState<string>('')
   const [percentual, setPercentual] = useState('8')
   const [rebuys, setRebuys] = useState('')
+  const [addons, setAddons] = useState('')
   const [versoes, setVersoes] = useState<Array<{ id: string; label: string; ativa: boolean }>>([])
   const [saving, setSaving] = useState(false)
 
@@ -558,7 +570,8 @@ function NovaEtapaDialog({ onCreated }: { onCreated: (id: string) => void }) {
       mes_referencia: mesReferencia,
       pontos_versao_id: versaoId || null,
       percentual_coleta: parseFloat(percentual) || 0,
-      rebuys_addons: parseInt(rebuys) || 0,
+      rebuys: parseInt(rebuys) || 0,
+      addons: parseInt(addons) || 0,
     })
     setSaving(false)
 
@@ -641,17 +654,31 @@ function NovaEtapaDialog({ onCreated }: { onCreated: (id: string) => void }) {
               <span className="text-gray-500">%</span>
             </div>
           </div>
-          <div>
-            <Label>Rebuys / Add-ons</Label>
-            <Input
-              type="number"
-              min="0"
-              step="1"
-              value={rebuys}
-              onChange={(e) => setRebuys(e.target.value.replace(/[^\d]/g, ''))}
-              placeholder="0"
-              className="w-24"
-            />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label>Rebuys</Label>
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                value={rebuys}
+                onChange={(e) => setRebuys(e.target.value.replace(/[^\d]/g, ''))}
+                placeholder="0"
+                className="w-24"
+              />
+            </div>
+            <div>
+              <Label>Add-ons</Label>
+              <Input
+                type="number"
+                min="0"
+                step="1"
+                value={addons}
+                onChange={(e) => setAddons(e.target.value.replace(/[^\d]/g, ''))}
+                placeholder="0"
+                className="w-24"
+              />
+            </div>
           </div>
         </div>
         <DialogFooter>

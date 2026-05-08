@@ -19,7 +19,8 @@ export interface EtapaResumo {
   data_realizada: string
   mes_referencia: string
   percentual_coleta: number
-  rebuys_addons: number
+  rebuys: number
+  addons: number
   pontos_versao_id: string | null
   pontos_versao_label: string | null
   total_classificacoes: number
@@ -32,7 +33,8 @@ export interface EtapaDetalhe {
   data_realizada: string
   mes_referencia: string
   percentual_coleta: number
-  rebuys_addons: number
+  rebuys: number
+  addons: number
   pontos_versao_id: string | null
   pontos_versao_label: string | null
   classificacoes: Array<{
@@ -59,7 +61,7 @@ export async function listarEtapas(mesReferencia?: string): Promise<EtapaResumo[
   let query = auth.supabase
     .from('ranking_etapas')
     .select(`
-      id, nome, data_realizada, mes_referencia, percentual_coleta, rebuys_addons, pontos_versao_id,
+      id, nome, data_realizada, mes_referencia, percentual_coleta, rebuys, addons, pontos_versao_id,
       pontos_versao:ranking_pontos_versoes(label)
     `)
     .order('data_realizada', { ascending: false })
@@ -105,7 +107,8 @@ export async function listarEtapas(mesReferencia?: string): Promise<EtapaResumo[
     data_realizada: e.data_realizada,
     mes_referencia: e.mes_referencia,
     percentual_coleta: parseFloat(e.percentual_coleta),
-    rebuys_addons: e.rebuys_addons ?? 0,
+    rebuys: e.rebuys ?? 0,
+    addons: e.addons ?? 0,
     pontos_versao_id: e.pontos_versao_id,
     pontos_versao_label: e.pontos_versao?.label || null,
     total_classificacoes: counts[e.id]?.c || 0,
@@ -134,7 +137,7 @@ export async function getEtapa(id: string): Promise<EtapaDetalhe | null> {
   const { data: etapa } = await auth.supabase
     .from('ranking_etapas')
     .select(`
-      id, nome, data_realizada, mes_referencia, percentual_coleta, rebuys_addons, pontos_versao_id,
+      id, nome, data_realizada, mes_referencia, percentual_coleta, rebuys, addons, pontos_versao_id,
       pontos_versao:ranking_pontos_versoes(label)
     `)
     .eq('id', id)
@@ -157,7 +160,8 @@ export async function getEtapa(id: string): Promise<EtapaDetalhe | null> {
     data_realizada: etapa.data_realizada,
     mes_referencia: etapa.mes_referencia,
     percentual_coleta: parseFloat(etapa.percentual_coleta),
-    rebuys_addons: etapa.rebuys_addons ?? 0,
+    rebuys: etapa.rebuys ?? 0,
+    addons: etapa.addons ?? 0,
     pontos_versao_id: etapa.pontos_versao_id,
     pontos_versao_label: etapa.pontos_versao?.label || null,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -202,7 +206,8 @@ interface EtapaInput {
   mes_referencia: string
   pontos_versao_id: string | null
   percentual_coleta: number
-  rebuys_addons: number
+  rebuys: number
+  addons: number
 }
 
 export async function criarEtapa(input: EtapaInput) {
@@ -403,7 +408,8 @@ export interface RankingMensalDetalhado {
     numero: number
     coleta_chips: number
     saldo_acumulado: number
-    rebuys_addons: number
+    rebuys: number
+  addons: number
   }>
   jogadores: Array<{
     player_id: string
@@ -424,7 +430,7 @@ export async function getRankingMensalDetalhado(mesReferencia: string): Promise<
 
   const { data: etapas } = await auth.supabase
     .from('ranking_etapas')
-    .select('id, nome, data_realizada, rebuys_addons')
+    .select('id, nome, data_realizada, rebuys, addons')
     .eq('mes_referencia', mesReferencia)
     .order('data_realizada')
 
@@ -432,12 +438,13 @@ export async function getRankingMensalDetalhado(mesReferencia: string): Promise<
     return { mes_referencia: mesReferencia, etapas: [], jogadores: [] }
   }
 
-  const etapasBase = etapas.map((e: { id: string; nome: string; data_realizada: string; rebuys_addons: number }, idx: number) => ({
+  const etapasBase = etapas.map((e: { id: string; nome: string; data_realizada: string; rebuys: number; addons: number }, idx: number) => ({
     id: e.id,
     nome: e.nome,
     data_realizada: e.data_realizada,
     numero: idx + 1,
-    rebuys_addons: e.rebuys_addons ?? 0,
+    rebuys: e.rebuys ?? 0,
+    addons: e.addons ?? 0,
   }))
 
   const etapaIds = etapasBase.map((e: { id: string }) => e.id)
@@ -471,7 +478,7 @@ export async function getRankingMensalDetalhado(mesReferencia: string): Promise<
     .lt('date', endMes)
     .in('operation_type', ['RANKING_PAGAMENTO_FICHAS', 'RANKING_PAGAMENTO_DINHEIRO'])
 
-  const etapasOrdered = etapasBase.map((e: { id: string; nome: string; data_realizada: string; numero: number; rebuys_addons: number }) => {
+  const etapasOrdered = etapasBase.map((e: { id: string; nome: string; data_realizada: string; numero: number; rebuys: number; addons: number }) => {
     const coleta = coletaPorEtapa.get(e.id) || 0
     return { ...e, coleta_chips: coleta, saldo_acumulado: 0 }
   })
