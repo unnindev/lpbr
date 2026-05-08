@@ -19,6 +19,7 @@ export interface EtapaResumo {
   data_realizada: string
   mes_referencia: string
   percentual_coleta: number
+  rebuys_addons: number
   pontos_versao_id: string | null
   pontos_versao_label: string | null
   total_classificacoes: number
@@ -31,6 +32,7 @@ export interface EtapaDetalhe {
   data_realizada: string
   mes_referencia: string
   percentual_coleta: number
+  rebuys_addons: number
   pontos_versao_id: string | null
   pontos_versao_label: string | null
   classificacoes: Array<{
@@ -43,7 +45,6 @@ export interface EtapaDetalhe {
     foi_premiado: boolean
     premio_chips: number | null
     coleta_transaction_id: string | null
-    rebuys_addons: number
   }>
 }
 
@@ -58,7 +59,7 @@ export async function listarEtapas(mesReferencia?: string): Promise<EtapaResumo[
   let query = auth.supabase
     .from('ranking_etapas')
     .select(`
-      id, nome, data_realizada, mes_referencia, percentual_coleta, pontos_versao_id,
+      id, nome, data_realizada, mes_referencia, percentual_coleta, rebuys_addons, pontos_versao_id,
       pontos_versao:ranking_pontos_versoes(label)
     `)
     .order('data_realizada', { ascending: false })
@@ -104,6 +105,7 @@ export async function listarEtapas(mesReferencia?: string): Promise<EtapaResumo[
     data_realizada: e.data_realizada,
     mes_referencia: e.mes_referencia,
     percentual_coleta: parseFloat(e.percentual_coleta),
+    rebuys_addons: e.rebuys_addons ?? 0,
     pontos_versao_id: e.pontos_versao_id,
     pontos_versao_label: e.pontos_versao?.label || null,
     total_classificacoes: counts[e.id]?.c || 0,
@@ -132,7 +134,7 @@ export async function getEtapa(id: string): Promise<EtapaDetalhe | null> {
   const { data: etapa } = await auth.supabase
     .from('ranking_etapas')
     .select(`
-      id, nome, data_realizada, mes_referencia, percentual_coleta, pontos_versao_id,
+      id, nome, data_realizada, mes_referencia, percentual_coleta, rebuys_addons, pontos_versao_id,
       pontos_versao:ranking_pontos_versoes(label)
     `)
     .eq('id', id)
@@ -143,7 +145,7 @@ export async function getEtapa(id: string): Promise<EtapaDetalhe | null> {
   const { data: classifs } = await auth.supabase
     .from('ranking_classificacoes')
     .select(`
-      id, posicao, pontos_snapshot, foi_premiado, premio_chips, coleta_transaction_id, rebuys_addons,
+      id, posicao, pontos_snapshot, foi_premiado, premio_chips, coleta_transaction_id,
       player:players(id, nick, name)
     `)
     .eq('etapa_id', id)
@@ -155,6 +157,7 @@ export async function getEtapa(id: string): Promise<EtapaDetalhe | null> {
     data_realizada: etapa.data_realizada,
     mes_referencia: etapa.mes_referencia,
     percentual_coleta: parseFloat(etapa.percentual_coleta),
+    rebuys_addons: etapa.rebuys_addons ?? 0,
     pontos_versao_id: etapa.pontos_versao_id,
     pontos_versao_label: etapa.pontos_versao?.label || null,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -168,7 +171,6 @@ export async function getEtapa(id: string): Promise<EtapaDetalhe | null> {
       foi_premiado: c.foi_premiado,
       premio_chips: c.premio_chips ? parseFloat(c.premio_chips) : null,
       coleta_transaction_id: c.coleta_transaction_id,
-      rebuys_addons: c.rebuys_addons ?? 0,
     })),
   }
 }
@@ -200,6 +202,7 @@ interface EtapaInput {
   mes_referencia: string
   pontos_versao_id: string | null
   percentual_coleta: number
+  rebuys_addons: number
 }
 
 export async function criarEtapa(input: EtapaInput) {
@@ -265,7 +268,6 @@ export interface ClassificacaoInput {
   posicao: number
   foi_premiado: boolean
   premio_chips: number | null
-  rebuys_addons: number
 }
 
 export async function salvarClassificacao(etapaId: string, linhas: ClassificacaoInput[]) {
@@ -367,7 +369,6 @@ export async function salvarClassificacao(etapaId: string, linhas: Classificacao
           foi_premiado: linha.foi_premiado,
           premio_chips: linha.foi_premiado ? linha.premio_chips : null,
           coleta_transaction_id: coletaTxId,
-          rebuys_addons: linha.rebuys_addons,
         })
         .eq('id', existente.id)
     } else {
@@ -379,7 +380,6 @@ export async function salvarClassificacao(etapaId: string, linhas: Classificacao
         foi_premiado: linha.foi_premiado,
         premio_chips: linha.foi_premiado ? linha.premio_chips : null,
         coleta_transaction_id: coletaTxId,
-        rebuys_addons: linha.rebuys_addons,
       })
     }
   }
@@ -403,6 +403,7 @@ export interface RankingMensalDetalhado {
     numero: number
     coleta_chips: number
     saldo_acumulado: number
+    rebuys_addons: number
   }>
   jogadores: Array<{
     player_id: string
@@ -410,12 +411,10 @@ export interface RankingMensalDetalhado {
     player_name: string
     pontosPorEtapa: Record<string, number>
     posicaoPorEtapa: Record<string, number>
-    rebuysPorEtapa: Record<string, number>
     total_pontos: number
     melhor_posicao: number | null
     premiacoes: number
     etapas_disputadas: number
-    total_rebuys: number
   }>
 }
 
@@ -425,7 +424,7 @@ export async function getRankingMensalDetalhado(mesReferencia: string): Promise<
 
   const { data: etapas } = await auth.supabase
     .from('ranking_etapas')
-    .select('id, nome, data_realizada')
+    .select('id, nome, data_realizada, rebuys_addons')
     .eq('mes_referencia', mesReferencia)
     .order('data_realizada')
 
@@ -433,11 +432,12 @@ export async function getRankingMensalDetalhado(mesReferencia: string): Promise<
     return { mes_referencia: mesReferencia, etapas: [], jogadores: [] }
   }
 
-  const etapasBase = etapas.map((e: { id: string; nome: string; data_realizada: string }, idx: number) => ({
+  const etapasBase = etapas.map((e: { id: string; nome: string; data_realizada: string; rebuys_addons: number }, idx: number) => ({
     id: e.id,
     nome: e.nome,
     data_realizada: e.data_realizada,
     numero: idx + 1,
+    rebuys_addons: e.rebuys_addons ?? 0,
   }))
 
   const etapaIds = etapasBase.map((e: { id: string }) => e.id)
@@ -471,7 +471,7 @@ export async function getRankingMensalDetalhado(mesReferencia: string): Promise<
     .lt('date', endMes)
     .in('operation_type', ['RANKING_PAGAMENTO_FICHAS', 'RANKING_PAGAMENTO_DINHEIRO'])
 
-  const etapasOrdered = etapasBase.map((e: { id: string; nome: string; data_realizada: string; numero: number }) => {
+  const etapasOrdered = etapasBase.map((e: { id: string; nome: string; data_realizada: string; numero: number; rebuys_addons: number }) => {
     const coleta = coletaPorEtapa.get(e.id) || 0
     return { ...e, coleta_chips: coleta, saldo_acumulado: 0 }
   })
@@ -494,7 +494,7 @@ export async function getRankingMensalDetalhado(mesReferencia: string): Promise<
   const { data: classifs } = await auth.supabase
     .from('ranking_classificacoes')
     .select(`
-      etapa_id, player_id, posicao, pontos_snapshot, foi_premiado, rebuys_addons,
+      etapa_id, player_id, posicao, pontos_snapshot, foi_premiado,
       player:players(id, nick, name)
     `)
     .in('etapa_id', etapaIds)
@@ -512,22 +512,17 @@ export async function getRankingMensalDetalhado(mesReferencia: string): Promise<
         player_name: c.player?.name || '',
         pontosPorEtapa: {},
         posicaoPorEtapa: {},
-        rebuysPorEtapa: {},
         total_pontos: 0,
         melhor_posicao: null,
         premiacoes: 0,
         etapas_disputadas: 0,
-        total_rebuys: 0,
       })
     }
     const j = mapa.get(id)!
     const pontos = parseFloat(c.pontos_snapshot) || 0
-    const rebuys = c.rebuys_addons ?? 0
     j.pontosPorEtapa[c.etapa_id] = pontos
     j.posicaoPorEtapa[c.etapa_id] = c.posicao
-    j.rebuysPorEtapa[c.etapa_id] = rebuys
     j.total_pontos += pontos
-    j.total_rebuys += rebuys
     j.etapas_disputadas++
     if (c.foi_premiado) j.premiacoes++
     if (j.melhor_posicao === null || c.posicao < j.melhor_posicao) {
@@ -552,7 +547,6 @@ export interface RankingGeralLinha {
   etapas_disputadas: number
   premiacoes: number
   melhor_posicao: number | null
-  total_rebuys: number
 }
 
 export async function getRankingGeral(mesReferencia: string): Promise<RankingGeralLinha[]> {
@@ -571,7 +565,7 @@ export async function getRankingGeral(mesReferencia: string): Promise<RankingGer
   const { data: classifs } = await auth.supabase
     .from('ranking_classificacoes')
     .select(`
-      player_id, posicao, pontos_snapshot, foi_premiado, rebuys_addons,
+      player_id, posicao, pontos_snapshot, foi_premiado,
       player:players(id, nick, name)
     `)
     .in('etapa_id', etapaIds)
@@ -591,12 +585,10 @@ export async function getRankingGeral(mesReferencia: string): Promise<RankingGer
         etapas_disputadas: 0,
         premiacoes: 0,
         melhor_posicao: null,
-        total_rebuys: 0,
       })
     }
     const linha = mapa.get(id)!
     linha.total_pontos += parseFloat(c.pontos_snapshot) || 0
-    linha.total_rebuys += c.rebuys_addons ?? 0
     linha.etapas_disputadas++
     if (c.foi_premiado) linha.premiacoes++
     if (linha.melhor_posicao === null || c.posicao < linha.melhor_posicao) {

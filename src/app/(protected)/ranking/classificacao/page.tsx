@@ -295,7 +295,6 @@ function RankingResumoView({ mes }: { mes: string }) {
                   <TableHead className="text-right">Pontos</TableHead>
                   <TableHead className="text-right">Etapas</TableHead>
                   <TableHead className="text-right">Premiações</TableHead>
-                  <TableHead className="text-right">Rebuys/Add</TableHead>
                   <TableHead className="text-right">Melhor pos.</TableHead>
                 </TableRow>
               </TableHeader>
@@ -312,9 +311,6 @@ function RankingResumoView({ mes }: { mes: string }) {
                     <TableCell className="text-right font-mono">{l.etapas_disputadas}</TableCell>
                     <TableCell className="text-right font-mono">
                       {l.premiacoes > 0 ? l.premiacoes : '—'}
-                    </TableCell>
-                    <TableCell className="text-right font-mono">
-                      {l.total_rebuys > 0 ? l.total_rebuys : '—'}
                     </TableCell>
                     <TableCell className="text-right font-mono">{l.melhor_posicao ?? '—'}º</TableCell>
                   </TableRow>
@@ -344,7 +340,6 @@ function RankingResumoView({ mes }: { mes: string }) {
                 <th className="border border-gray-400 px-2 py-1 text-right w-24">Pontos</th>
                 <th className="border border-gray-400 px-2 py-1 text-right w-24">Etapas</th>
                 <th className="border border-gray-400 px-2 py-1 text-right w-28">Premiações</th>
-                <th className="border border-gray-400 px-2 py-1 text-right w-24">Rebuys/Add</th>
                 <th className="border border-gray-400 px-2 py-1 text-right w-28">Melhor pos.</th>
               </tr>
             </thead>
@@ -363,9 +358,6 @@ function RankingResumoView({ mes }: { mes: string }) {
                   </td>
                   <td className="border border-gray-400 px-2 py-1 text-right font-mono">
                     {l.premiacoes > 0 ? l.premiacoes : '—'}
-                  </td>
-                  <td className="border border-gray-400 px-2 py-1 text-right font-mono">
-                    {l.total_rebuys > 0 ? l.total_rebuys : '—'}
                   </td>
                   <td className="border border-gray-400 px-2 py-1 text-right font-mono">
                     {l.melhor_posicao ?? '—'}º
@@ -441,6 +433,17 @@ function RankingPorEtapasView({ mes }: { mes: string }) {
         ))}
       </tbody>
       <tfoot>
+        <tr>
+          <td colSpan={2} className="border border-gray-400 px-2 py-1 font-bold text-right bg-gray-50">
+            Rebuys / Add-ons
+          </td>
+          {detalhado.etapas.map(e => (
+            <td key={e.id} className="border border-gray-400 px-1 py-1 text-center font-mono bg-gray-50">
+              {e.rebuys_addons > 0 ? e.rebuys_addons : '—'}
+            </td>
+          ))}
+          <td className="border border-gray-400 bg-gray-50"></td>
+        </tr>
         <tr>
           <td colSpan={2} className="border border-gray-400 px-2 py-1 font-bold text-right bg-gray-100">
             Coleta da Etapa
@@ -529,6 +532,7 @@ function NovaEtapaDialog({ onCreated }: { onCreated: (id: string) => void }) {
   const [mesReferencia, setMesReferencia] = useState(format(hoje, 'yyyy-MM-01'))
   const [versaoId, setVersaoId] = useState<string>('')
   const [percentual, setPercentual] = useState('8')
+  const [rebuys, setRebuys] = useState('')
   const [versoes, setVersoes] = useState<Array<{ id: string; label: string; ativa: boolean }>>([])
   const [saving, setSaving] = useState(false)
 
@@ -554,6 +558,7 @@ function NovaEtapaDialog({ onCreated }: { onCreated: (id: string) => void }) {
       mes_referencia: mesReferencia,
       pontos_versao_id: versaoId || null,
       percentual_coleta: parseFloat(percentual) || 0,
+      rebuys_addons: parseInt(rebuys) || 0,
     })
     setSaving(false)
 
@@ -635,6 +640,18 @@ function NovaEtapaDialog({ onCreated }: { onCreated: (id: string) => void }) {
               />
               <span className="text-gray-500">%</span>
             </div>
+          </div>
+          <div>
+            <Label>Rebuys / Add-ons</Label>
+            <Input
+              type="number"
+              min="0"
+              step="1"
+              value={rebuys}
+              onChange={(e) => setRebuys(e.target.value.replace(/[^\d]/g, ''))}
+              placeholder="0"
+              className="w-24"
+            />
           </div>
         </div>
         <DialogFooter>
