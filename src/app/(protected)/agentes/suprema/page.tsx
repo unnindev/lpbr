@@ -19,7 +19,9 @@ import {
   CollapsibleTrigger,
 } from '@/components/ui/collapsible'
 import { Badge } from '@/components/ui/badge'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { PlayerSelector } from '@/components/shared/player-selector'
+import { ControleSuprema } from './controle-suprema'
 import {
   listarAgentes,
   criarAgente,
@@ -67,6 +69,7 @@ export default function AgentesSupremaPage() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
   const [expandedAgents, setExpandedAgents] = useState<Set<string>>(new Set())
+  const [tab, setTab] = useState('agentes')
 
   const [playerId, setPlayerId] = useState('')
   const [pctRakeback, setPctRakeback] = useState('30')
@@ -219,19 +222,25 @@ export default function AgentesSupremaPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Agentes Suprema</h1>
-          <p className="text-gray-500">{agents.length} agente{agents.length !== 1 ? 's' : ''}</p>
-        </div>
+      <h1 className="text-2xl font-bold text-gray-900">Agentes Suprema</h1>
 
-        <Button onClick={handleOpenNew}>
-          <Plus className="h-4 w-4 mr-2" />
-          Novo Agente
-        </Button>
-      </div>
+      <Tabs value={tab} onValueChange={setTab}>
+        <TabsList>
+          <TabsTrigger value="agentes">Agentes</TabsTrigger>
+          <TabsTrigger value="controle">Controle Suprema</TabsTrigger>
+        </TabsList>
 
-      <div className="space-y-4">
+        <TabsContent value="agentes" className="mt-4 space-y-4">
+          <div className="flex items-center justify-between">
+            <p className="text-gray-500">{agents.length} agente{agents.length !== 1 ? 's' : ''}</p>
+
+            <Button onClick={handleOpenNew}>
+              <Plus className="h-4 w-4 mr-2" />
+              Novo Agente
+            </Button>
+          </div>
+
+          <div className="space-y-4">
         {loading ? (
           <Card>
             <CardContent className="flex items-center justify-center h-32">
@@ -349,7 +358,13 @@ export default function AgentesSupremaPage() {
             </Collapsible>
           ))
         )}
-      </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="controle" className="mt-4">
+          <ControleSuprema />
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent>
